@@ -25,23 +25,28 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 1. Базова ініціалізація
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         Bootstrapper.run(this, settings)
         
+        // 2. Ініціалізація трьох менеджерів історії для різних папок
         hEdited = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited"))
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
         hTpl = HistoryManager(this, File(getExternalFilesDir(null), "Templates"))
 
+        // 3. Ініціалізація логіки обробки (Workflow)
         workflow = WorkflowManager(this, settings, hEdited)
 
+        // 4. UI компоненти
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        interaction = InteractionManager(this, camera, hEdited, hRaw, hTpl, settings)
+        // 5. Налаштування взаємодії (передаємо всі історії та workflow)
+        interaction = InteractionManager(this, camera, hEdited, hRaw, hTpl, settings, workflow)
         interaction.setup()
-
-        // Камера сама НЕ запускається при старті
+        
+        // Камера більше не запускається автоматично при старті додатка
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -50,10 +55,12 @@ class MainActivity : Activity() {
         when (requestCode) {
             camera.REQUEST_CAPTURE -> {
                 if (resultCode == RESULT_OK) {
+                    // Успішна зйомка: обробляємо та оновлюємо список Raw
                     workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
                     hRaw.updateHistory()
                 } else {
-                    camera.cleanup() // Видаляємо пустий RAW
+                    // Користувач скасував: видаляємо пустий файл і оновлюємо прев'ю
+                    camera.cleanup()
                     interaction.refreshPreview()
                 }
             }
@@ -72,10 +79,12 @@ class MainActivity : Activity() {
         }
     }
 
+    // Метод відображення для HistoryManager та InteractionManager
     fun display(file: File?) {
         ImageDisplayHelper.show(file, resultImage, btnPrint)
     }
 
+    // Виклик системного вікна вибору PNG шаблону
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -85,6 +94,8 @@ class MainActivity : Activity() {
     }
 
     override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
-        if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) camera.capture()
+        if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
+            camera.capture()
+        }
     }
 }

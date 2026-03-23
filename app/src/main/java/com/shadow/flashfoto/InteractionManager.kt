@@ -1,9 +1,7 @@
 package com.shadow.flashfoto
 
-import android.app.AlertDialog
 import android.view.View
 import android.widget.Button
-import java.io.File
 
 class InteractionManager(
     private val activity: MainActivity,
@@ -11,7 +9,8 @@ class InteractionManager(
     private val hEdited: HistoryManager,
     private val hRaw: HistoryManager,
     private val hTpl: HistoryManager,
-    private val settings: SettingsManager
+    private val settings: SettingsManager,
+    private val workflow: WorkflowManager
 ) {
 
     fun setup() {
@@ -32,11 +31,13 @@ class InteractionManager(
             if (isDual) hRaw.getNext() else hEdited.getNext()
             refreshPreview()
         }
+        
+        // Видалення Фото (викликає Workflow)
         activity.findViewById<Button>(R.id.btnPhotoDel).setOnClickListener {
-            confirmDelete(if (isDual) hRaw else hEdited)
+            workflow.deleteWithConfirm(if (isDual) hRaw else hEdited) { refreshPreview() }
         }
 
-        // Шаблон навігація (Layer 2)
+        // Шаблон навігація
         activity.findViewById<Button>(R.id.btnFramePrev).setOnClickListener {
             hTpl.getPrev()?.let { 
                 settings.customTemplatePath = it.absolutePath
@@ -49,13 +50,20 @@ class InteractionManager(
                 refreshPreview()
             }
         }
-        activity.findViewById<Button>(R.id.btnFrameDel).setOnClickListener { confirmDelete(hTpl) }
+        
+        // Видалення Шаблону (викликає Workflow)
+        activity.findViewById<Button>(R.id.btnFrameDel).setOnClickListener {
+            workflow.deleteWithConfirm(hTpl) { refreshPreview() }
+        }
 
         // Друк
         activity.findViewById<Button>(R.id.btnPrint).setOnClickListener {
             if (isDual) {
                 val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
-                bitmap?.let { PrintManager.print(activity, it, settings) }
+                bitmap?.let {
+                    workflow.saveManual(it)
+                    PrintManager.print(activity, it, settings)
+                }
             } else {
                 hEdited.getCurrent()?.let { PrintManager.printFromFile(activity, it, settings) }
             }
@@ -66,7 +74,6 @@ class InteractionManager(
         }
     }
 
-    // ТЕПЕР ВІДКРИТИЙ (Public за замовчуванням у Kotlin)
     fun refreshPreview() {
         if (settings.appMode == 1) {
             val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
@@ -75,15 +82,5 @@ class InteractionManager(
         } else {
             activity.display(hEdited.getCurrent())
         }
-    }
-
-    private fun confirmDelete(manager: HistoryManager) {
-        AlertDialog.Builder(activity)
-            .setTitle("Видалення")
-            .setMessage("Видалити цей файл?")
-            .setPositiveButton("Так") { _, _ -> 
-                if (manager.deleteCurrent()) refreshPreview()
-            }
-            .setNegativeButton("Ні", null).show()
     }
 }

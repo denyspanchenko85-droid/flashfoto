@@ -26,6 +26,8 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+            // Ініціалізація динамічних кольорів Google Material You
+        com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(this)
         setContentView(R.layout.activity_main)
 
         // 1. Ініціалізація бази та папок

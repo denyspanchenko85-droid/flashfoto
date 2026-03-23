@@ -1,33 +1,31 @@
 package com.shadow.flashfoto
 
-import android.util.Log
+import android.content.Context
 import java.io.File
 
-class HistoryManager(private val directory: File) {
+class HistoryManager(private val context: Context, private val directory: File) {
     private var files: List<File> = emptyList()
     var currentIndex: Int = -1
 
     init { updateHistory() }
 
     fun updateHistory() {
-        if (!directory.exists()) {
-            directory.mkdirs() // Створюємо папку, якщо її немає
-        }
+        if (!directory.exists()) directory.mkdirs()
 
         files = directory.listFiles { f -> 
             val ext = f.extension.lowercase()
             ext == "jpg" || ext == "jpeg" || ext == "png" 
         }?.sortedByDescending { it.lastModified() } ?: emptyList()
 
-        // Після оновлення завжди стаємо на найсвіжіше фото
         if (files.isNotEmpty()) {
             currentIndex = 0
         }
         
-        Log.d("FlashFoto", "History updated. Found ${files.size} photos in ${directory.absolutePath}")
+        // ТЕПЕР ПИШЕМО В ТВОЙ ФАЙЛ
+        Logger.log(context, "Історія оновлена. Знайдено фото: ${files.size} у папці ${directory.name}")
     }
 
-    fun getNext(): File? { // Новіші (вгору до 0)
+    fun getNext(): File? {
         if (currentIndex > 0) {
             currentIndex--
             return files[currentIndex]
@@ -35,7 +33,7 @@ class HistoryManager(private val directory: File) {
         return null
     }
 
-    fun getPrev(): File? { // Старіші (вниз до кінця списку)
+    fun getPrev(): File? {
         if (currentIndex < files.size - 1) {
             currentIndex++
             return files[currentIndex]
@@ -44,6 +42,4 @@ class HistoryManager(private val directory: File) {
     }
     
     fun getCurrent(): File? = files.getOrNull(currentIndex)
-    
-    fun getCount(): Int = files.size
 }

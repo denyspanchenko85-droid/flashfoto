@@ -6,12 +6,18 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 object Logger {
+    private const val LOG_FILE = "flash_log.txt" // Змінимо назву на загальну
+
     fun log(context: Context, message: String, e: Throwable? = null) {
         val timeStamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        val logEntry = "[$timeStamp] $message | ${e?.message}\n"
+        val type = if (e == null) "INFO" else "ERROR"
+        val logEntry = "[$timeStamp] $type: $message ${e?.message ?: ""}\n"
+        
         try {
-            val file = File(context.getExternalFilesDir(null), "error_log.txt")
+            val file = File(context.getExternalFilesDir(null), LOG_FILE)
             file.appendText(logEntry)
-        } catch (ex: Exception) { ex.printStackTrace() }
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
     }
 }

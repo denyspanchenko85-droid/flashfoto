@@ -4,84 +4,88 @@ import android.app.AlertDialog
 import android.view.View
 import android.widget.Button
 import android.widget.Toast
+import java.io.File
 
 class InteractionManager(
     private val activity: MainActivity,
     private val camera: CameraHandler,
-    private val hEdited: HistoryManager,   // Історія готових
-    private val hRaw: HistoryManager,      // Історія сирих фото
-    private val hFrames: HistoryManager,   // Історія шаблонів
+    private val hEdited: HistoryManager,
+    private val hRaw: HistoryManager,
+    private val hTpl: HistoryManager,
     private val settings: SettingsManager
 ) {
 
     fun setup() {
-        val rowFrame = activity.findViewById<View>(R.id.rowFrame)
+        val rowFrame = activity.findViewById<View>(R.id.layerTemplates)
+        val isDual = settings.appMode == 1
         
-        // Визначаємо видимість другого шару залежно від режиму
-        rowFrame.visibility = if (settings.isDualLayerMode) View.VISIBLE else View.GONE
+        rowFrame.visibility = if (isDual) View.VISIBLE else View.GONE
 
         activity.findViewById<Button>(R.id.btnCapture).setOnClickListener { camera.capture() }
 
-        // --- ЛОГІКА ФОТО (Слой 1 або звичайна історія) ---
-        activity.findViewById<Button>(R.id.btnPhotoPrev).setOnClickListener {
-            val file = if (settings.isDualLayerMode) hRaw.getPrev() else hEdited.getPrev()
-            updatePreview(file)
+        // Фото навігація
+        activity.findViewById<Button>(R.id.btnPrev).setOnClickListener {
+            val file = if (isDual) hRaw.getPrev() else hEdited.getPrev()
+            refreshPreview(file)
         }
 
-        activity.findViewById<Button>(R.id.btnPhotoNext).setOnClickListener {
-            val file = if (settings.isDualLayerMode) hRaw.getNext() else hEdited.getNext()
-            updatePreview(file)
+        activity.findViewById<Button>(R.id.btnNext).setOnClickListener {
+            val file = if (isDual) hRaw.getNext() else hEdited.getNext()
+            refreshPreview(file)
         }
 
-        activity.findViewById<Button>(R.id.btnPhotoDel).setOnClickListener {
-            confirmDelete(if (settings.isDualLayerMode) hRaw else hEdited)
+        activity.findViewById<Button>(R.id.btnDelete).setOnClickListener {
+            confirmDelete(if (isDual) hRaw else hEdited)
         }
 
-        // --- ЛОГІКА РАМКИ (Слой 2) ---
-        activity.findViewById<Button>(R.id.btnFramePrev).setOnClickListener {
-            hFrames.getPrev()?.let { 
+        // Шаблон навігація (Layer 2)
+        activity.findViewById<Button>(R.id.btnTplPrev).setOnClickListener {
+            hTpl.getPrev()?.let { 
                 settings.customTemplatePath = it.absolutePath
-                updatePreview(hRaw.getCurrent())
+                refreshPreview(hRaw.getCurrent())
             }
         }
 
-        activity.findViewById<Button>(R.id.btnFrameNext).setOnClickListener {
-            hFrames.getNext()?.let { 
+        activity.findViewById<Button>(R.id.btnTplNext).setOnClickListener {
+            hTpl.getNext()?.let { 
                 settings.customTemplatePath = it.absolutePath
-                updatePreview(hRaw.getCurrent())
+                refreshPreview(hRaw.getCurrent())
             }
         }
 
-        activity.findViewById<Button>(R.id.btnFrameDel).setOnClickListener { confirmDelete(hFrames) }
+        activity.findViewById<Button>(R.id.btnTplDelete).setOnClickListener { confirmDelete(hTpl) }
 
-        // --- ДРУК ---
+        // Друк
         activity.findViewById<Button>(R.id.btnPrint).setOnClickListener {
-            if (settings.isDualLayerMode) {
-                val bitmap = CompositionManager.preview(activity, hRaw.getCurrent(), hFrames.getCurrent(), settings)
+            if (isDual) {
+                val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), settings.customTemplatePath, settings)
                 bitmap?.let { PrintManager.print(activity, it, settings) }
             } else {
                 hEdited.getCurrent()?.let { PrintManager.printFromFile(activity, it, settings) }
             }
         }
         
-        activity.findViewById<View>(R.id.btnSettings).setOnClickListener { SettingsDialogHandler(activity, settings).show() }
+        activity.findViewById<View>(R.id.btnSettings).setOnClickListener { 
+            SettingsDialogHandler(activity, settings).show() 
+        }
     }
 
-    private fun updatePreview(photoFile: android.net.Uri? = null) { // Спрощено для прикладу
-        if (settings.isDualLayerMode) {
-            val bitmap = CompositionManager.preview(activity, hRaw.getCurrent(), hFrames.getCurrent(), settings)
+    private fun refreshPreview(file: File? = null) {
+        if (settings.appMode == 1) {
+            val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), settings.customTemplatePath, settings)
             activity.resultImage.setImageBitmap(bitmap)
+            activity.btnPrint.visibility = View.VISIBLE
         } else {
-            activity.display(hEdited.getCurrent())
+            activity.display(file ?: hEdited.getCurrent())
         }
     }
 
     private fun confirmDelete(manager: HistoryManager) {
         AlertDialog.Builder(activity)
             .setTitle("Видалення")
-            .setMessage("Видалити цей файл назавжди?")
+            .setMessage("Видалити цей файл?")
             .setPositiveButton("Так") { _, _ -> 
-                if (manager.deleteCurrent()) updatePreview()
+                if (manager.deleteCurrent()) refreshPreview(manager.getCurrent())
             }
             .setNegativeButton("Ні", null).show()
     }

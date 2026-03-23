@@ -21,8 +21,8 @@ class SettingsManager(context: Context) {
         get() = prefs.getString("custom_template_path", null)
         set(value) = prefs.edit().putString("custom_template_path", value).apply()
 
-    // НОВИЙ РЕЖИМ: false - Звичайний (Історія), true - Конструктор (2 шари)
-    var isDualLayerMode: Boolean
-        get() = prefs.getBoolean("dual_layer_mode", false)
-        set(value) = prefs.edit().putBoolean("dual_layer_mode", value).apply()
+    // 0 - Історія, 1 - Конструктор
+    var appMode: Int
+        get() = prefs.getInt("app_mode", 0)
+        set(value) = prefs.edit().putInt("app_mode", value).apply()
 }

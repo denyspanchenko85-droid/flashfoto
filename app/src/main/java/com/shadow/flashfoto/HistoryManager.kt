@@ -9,16 +9,31 @@ class HistoryManager(private val directory: File) {
     init { updateHistory() }
 
     fun updateHistory() {
-        files = directory.listFiles { f -> f.extension == "jpg" || f.extension == "png" }
-            ?.sortedByDescending { it.lastModified() } ?: emptyList()
-        if (currentIndex == -1 && files.isNotEmpty()) currentIndex = 0
+        // Додаємо перевірку exists(), щоб не було помилок, якщо папки ще немає
+        files = if (directory.exists()) {
+            directory.listFiles { f -> 
+                val ext = f.extension.lowercase()
+                ext == "jpg" || ext == "png" 
+            }?.sortedByDescending { it.lastModified() } ?: emptyList()
+        } else {
+            emptyList()
+        }
+
+        // ВАЖЛИВО: Коли ми робимо нове фото, ми хочемо, щоб воно стало поточним (індекс 0)
+        if (files.isNotEmpty()) {
+            currentIndex = 0
+        } else {
+            currentIndex = -1
+        }
     }
 
+    // getNext — іде до НОВІШИХ фото (вгору по списку до 0)
     fun getNext(): File? {
         if (currentIndex > 0) currentIndex--
         return files.getOrNull(currentIndex)
     }
 
+    // getPrev — іде до СТАРІШИХ фото (вниз по списку до кінця)
     fun getPrev(): File? {
         if (currentIndex < files.size - 1) currentIndex++
         return files.getOrNull(currentIndex)

@@ -1,31 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
     android:padding="16dp">
+
+    <ImageView
+        android:id="@+id/btnSettings"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:src="@android:drawable/ic_menu_preferences" />
 
     <ImageView
         android:id="@+id/resultImage"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:scaleType="fitCenter"
-        android:background="#EEE" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/controls"
+        android:layout_below="@id/btnSettings"
+        android:scaleType="fitCenter" />
 
-    <Button
-        android:id="@+id/btnCapture"
+    <LinearLayout
+        android:id="@+id/controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Зробити фото"
-        android:layout_marginTop="8dp"/>
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/btnPrint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Друк (PDF)"
-        android:visibility="gone"
-        android:layout_marginTop="8dp"/>
-</LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button android:id="@+id/btnPrev" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="&lt;" />
+            <Button android:id="@+id/btnCapture" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="2" android:text="ФОТО" />
+            <Button android:id="@+id/btnNext" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="&gt;" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnPrint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ДРУК (PDF)"
+            android:visibility="gone" />
+    </LinearLayout>
+</RelativeLayout>

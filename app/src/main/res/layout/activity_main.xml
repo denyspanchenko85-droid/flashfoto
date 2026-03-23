@@ -6,19 +6,15 @@
     android:background="?attr/colorSurface"
     android:padding="12dp">
 
-    <ImageView 
-        android:id="@+id/btnSettings" 
-        android:layout_width="48dp" 
-        android:layout_height="48dp"
+    <ImageView android:id="@+id/btnSettings" 
+        android:layout_width="48dp" android:layout_height="48dp"
         android:layout_alignParentRight="true" 
         android:padding="8dp"
         app:tint="?attr/colorOnSurface"
         android:src="@android:drawable/ic_menu_preferences" />
 
-    <ImageView 
-        android:id="@+id/btnShare"
-        android:layout_width="48dp" 
-        android:layout_height="48dp"
+    <ImageView android:id="@+id/btnShare"
+        android:layout_width="48dp" android:layout_height="48dp"
         android:layout_toLeftOf="@id/btnSettings"
         android:layout_marginRight="8dp"
         android:padding="8dp"
@@ -26,119 +22,85 @@
         android:src="@android:drawable/ic_menu_share"
         android:visibility="gone" />
 
-    <ImageView 
-        android:id="@+id/resultImage" 
-        android:layout_width="match_parent" 
-        android:layout_height="match_parent"
-        android:layout_above="@id/controls" 
-        android:layout_below="@id/btnSettings" 
+    <ImageView android:id="@+id/resultImage" 
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:layout_above="@id/controls" android:layout_below="@id/btnSettings" 
         android:scaleType="fitCenter" />
 
-    <LinearLayout 
-        android:id="@+id/controls" 
-        android:layout_width="match_parent" 
-        android:layout_height="wrap_content"
+    <LinearLayout android:id="@+id/controls" 
+        android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_alignParentBottom="true" 
+        android:layout_marginLeft="4dp" 
+        android:layout_marginRight="4dp"
         android:orientation="vertical">
 
-        <LinearLayout 
-            android:id="@+id/rowPhoto" 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
-            android:gravity="center" 
-            android:orientation="horizontal">
+        <LinearLayout android:id="@+id/rowPhoto" 
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center" android:orientation="horizontal">
             
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPhotoPrev" 
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="56dp" 
-                android:layout_height="wrap_content" 
-                android:text="&lt;" />
+                android:id="@+id/btnPhotoPrev" style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="56dp" android:layout_height="wrap_content" android:text="&lt;" />
 
-            <TextView 
-                android:layout_width="0dp" 
-                android:layout_weight="1" 
-                android:layout_height="wrap_content" 
-                android:text="ФОТО" 
-                android:gravity="center" 
+            <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" 
+                android:text="ФОТО" android:gravity="center" 
                 android:textAppearance="?attr/textAppearanceLabelLarge"
                 android:textColor="?attr/colorOnSurface" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPhotoNext" 
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="56dp" 
-                android:layout_height="wrap_content" 
-                android:text="&gt;" />
+                android:id="@+id/btnPhotoNext" style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="56dp" android:layout_height="wrap_content" android:text="&gt;" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPhotoDel" 
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" 
                 android:text="DEL" 
-                app:rippleColor="?attr/colorError"
-                android:textColor="?attr/colorError" />
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#E53935" />
         </LinearLayout>
 
-        <LinearLayout 
-            android:id="@+id/rowFrame" 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
-            android:gravity="center" 
-            android:orientation="horizontal" 
-            android:layout_marginTop="4dp">
+        <LinearLayout android:id="@+id/rowFrame" 
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center" android:orientation="horizontal" android:layout_marginTop="4dp">
             
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFramePrev" 
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="56dp" 
-                android:layout_height="wrap_content" 
-                android:text="&lt;" />
+                android:id="@+id/btnFramePrev" style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="56dp" android:layout_height="wrap_content" android:text="&lt;" />
 
-            <TextView 
-                android:layout_width="0dp" 
-                android:layout_weight="1" 
-                android:layout_height="wrap_content" 
-                android:text="РАМКА" 
-                android:gravity="center" 
+            <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" 
+                android:text="РАМКА" android:gravity="center" 
                 android:textAppearance="?attr/textAppearanceLabelLarge"
                 android:textColor="?attr/colorOnSurface" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFrameNext" 
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="56dp" 
-                android:layout_height="wrap_content" 
-                android:text="&gt;" />
+                android:id="@+id/btnFrameNext" style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="56dp" android:layout_height="wrap_content" android:text="&gt;" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFrameDel" 
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content" 
-                android:layout_height="wrap_content" 
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" 
                 android:text="DEL" 
-                app:rippleColor="?attr/colorError"
-                android:textColor="?attr/colorError" />
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#E53935" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCapture" 
-            android:layout_width="match_parent" 
-            android:layout_height="64dp"
+            android:layout_width="match_parent" android:layout_height="64dp"
             android:layout_marginTop="12dp"
             android:text="ЗРОБИТИ НОВЕ ФОТО"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            app:cornerRadius="16dp" />
+            android:textColor="#FFFFFF"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="16dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPrint" 
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content"
+            android:id="@+id/btnPrint" style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="ЗГЕНЕРУВАТИ ТА ДРУКУВАТИ"
             android:visibility="gone" />
-            
     </LinearLayout>
 </RelativeLayout>

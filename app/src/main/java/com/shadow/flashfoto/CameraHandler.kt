@@ -25,7 +25,7 @@ class CameraHandler(private val activity: Activity) {
             val photoFile = try {
                 createImageFile()
             } catch (ex: Exception) {
-                Logger.log(activity, "CameraHandler: Error creating raw file", ex)
+                Logger.log(activity, "Error creating raw file", ex)
                 null
             }
 
@@ -42,12 +42,22 @@ class CameraHandler(private val activity: Activity) {
     }
 
     private fun createImageFile(): File {
-        // Створюємо папку Raw всередині приватного сховища
         val storageDir = File(activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw")
         if (!storageDir.exists()) storageDir.mkdirs()
 
         return File.createTempFile("RAW_${System.currentTimeMillis()}_", ".jpg", storageDir).apply {
             currentPhotoPath = absolutePath
         }
+    }
+
+    // ПУНКТ 1: Метод для видалення пустого файлу при скасуванні зйомки
+    fun cleanup() {
+        currentPhotoPath?.let { path ->
+            val file = File(path)
+            if (file.exists() && file.length() == 0L) {
+                file.delete()
+            }
+        }
+        currentPhotoPath = null
     }
 }

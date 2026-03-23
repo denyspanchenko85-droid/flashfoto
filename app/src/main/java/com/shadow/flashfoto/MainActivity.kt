@@ -29,7 +29,6 @@ class MainActivity : Activity() {
         camera = CameraHandler(this)
         Bootstrapper.run(this, settings)
         
-        // Ініціалізація трьох папок
         hEdited = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited"))
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
         hTpl = HistoryManager(this, File(getExternalFilesDir(null), "Templates"))
@@ -42,29 +41,41 @@ class MainActivity : Activity() {
         interaction = InteractionManager(this, camera, hEdited, hRaw, hTpl, settings)
         interaction.setup()
 
-        camera.capture()
+        // ПУНКТ 2: Камера більше не запускається автоматично при старті
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode != RESULT_OK) return
 
         when (requestCode) {
             camera.REQUEST_CAPTURE -> {
-                workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
-                hRaw.updateHistory()
+                if (resultCode == RESULT_OK) {
+                    workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
+                    hRaw.updateHistory()
+                } else {
+                    // ПУНКТ 1: Видаляємо пустий файл, якщо користувач натиснув "назад" у камері
+                    camera.cleanup()
+                    interaction.refreshPreview()
+                }
             }
-            2 -> data?.data?.let { uri ->
-                val path = FileUtils.saveCustomTemplate(this, uri)
-                if (path != null) {
-                    settings.customTemplatePath = path
-                    hTpl.updateHistory()
+            2 -> {
+                if (resultCode == RESULT_OK) {
+                    data?.data?.let { uri ->
+                        val path = FileUtils.saveCustomTemplate(this, uri)
+                        if (path != null) {
+                            settings.customTemplatePath = path
+                            hTpl.updateHistory()
+                            interaction.refreshPreview()
+                        }
+                    }
                 }
             }
         }
     }
 
-    fun display(file: File?) { ImageDisplayHelper.show(file, resultImage, btnPrint) }
+    fun display(file: File?) {
+        ImageDisplayHelper.show(file, resultImage, btnPrint)
+    }
 
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {

@@ -27,27 +27,48 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Ініціалізація менеджерів
+        // 1. Ініціалізація
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         
+        // 2. РОЗГОРТАННЯ СТРУКТУРИ ТА ШАБЛОНІВ
+        initAppStorage()
+        
         // Шлях для історії: Тільки оброблені фото (Edited)
         val editedDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited")
-        if (!editedDir.exists()) editedDir.mkdirs()
-        
         history = HistoryManager(this, editedDir)
         workflow = WorkflowManager(this, settings, history)
 
-        // 2. UI Binding
+        // 3. UI Binding
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // 3. Setup Interaction (Кнопки)
+        // 4. Setup Interaction
         interaction = InteractionManager(this, camera, history, settings)
         interaction.setup()
 
         // Старт камери
         camera.capture()
+    }
+
+    private fun initAppStorage() {
+        // Створюємо папку Templates
+        val templateDir = File(getExternalFilesDir(null), "Templates")
+        if (!templateDir.exists()) templateDir.mkdirs()
+
+        // Копіюємо дефолтні шаблони з ресурсів у внутрішню папку
+        FileUtils.copyRawToTemplates(this, R.drawable.easter_vert_1, "default_vertical.png")
+        FileUtils.copyRawToTemplates(this, R.drawable.easter_horiz_1, "default_horizontal.png")
+
+        // Якщо шаблон ще не вибрано — ставимо вертикальний за замовчуванням
+        if (settings.customTemplatePath == null) {
+            val defaultPath = File(templateDir, "default_vertical.png").absolutePath
+            settings.customTemplatePath = defaultPath
+        }
+        
+        // Також перевіримо папку Edited
+        val editedDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited")
+        if (!editedDir.exists()) editedDir.mkdirs()
     }
 
     fun pickTemplateIntent() {
@@ -68,10 +89,11 @@ class MainActivity : Activity() {
             }
             REQUEST_PICK_TEMPLATE -> {
                 data?.data?.let { uri ->
-                    val savedPath = FileUtils.saveTemplate(this, uri)
+                    // Копіюємо зовнішній файл у нашу папку Templates
+                    val savedPath = FileUtils.saveCustomTemplate(this, uri)
                     if (savedPath != null) {
                         settings.customTemplatePath = savedPath
-                        Toast.makeText(this, "Шаблон успішно оновлено", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Шаблон додано та активовано", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -89,8 +111,6 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
         if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
             camera.capture()
-        } else {
-            Toast.makeText(this, "Немає доступу до камери", Toast.LENGTH_LONG).show()
         }
     }
 }

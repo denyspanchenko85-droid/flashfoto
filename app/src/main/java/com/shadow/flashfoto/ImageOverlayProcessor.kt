@@ -13,17 +13,12 @@ object ImageOverlayProcessor {
         val w = photo.width
         val h = photo.height
 
-        // Визначаємо джерело шаблону
-        val frame = if (settings.customTemplatePath != null) {
-            val file = File(settings.customTemplatePath!!)
-            if (file.exists()) {
-                BitmapFactory.decodeFile(file.absolutePath)
-            } else {
-                getDefaultFrame(context, w, h)
-            }
-        } else {
-            getDefaultFrame(context, w, h)
-        } ?: return photo
+        // 1. Пріоритет: вибраний у налаштуваннях
+        // 2. Запасний: default_vertical.png у папці Templates
+        val templatePath = settings.customTemplatePath ?: 
+            File(context.getExternalFilesDir(null), "Templates/default_vertical.png").absolutePath
+
+        val frame = BitmapFactory.decodeFile(templatePath) ?: return photo
 
         val scaledFrame = Bitmap.createScaledBitmap(frame, w, h, true)
         val result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -35,10 +30,5 @@ object ImageOverlayProcessor {
         frame.recycle()
         scaledFrame.recycle()
         return result
-    }
-
-    private fun getDefaultFrame(context: Context, w: Int, h: Int): Bitmap? {
-        val resId = if (w > h) R.drawable.easter_horiz_1 else R.drawable.easter_vert_1
-        return BitmapFactory.decodeResource(context.resources, resId)
     }
 }

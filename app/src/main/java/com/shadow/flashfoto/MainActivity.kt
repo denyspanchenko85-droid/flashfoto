@@ -12,11 +12,11 @@ import android.widget.Toast
 import java.io.File
 
 class MainActivity : Activity() {
-    private lateinit var settings: SettingsManager
-    private lateinit var history: HistoryManager
-    private lateinit var camera: CameraHandler
-    private lateinit var workflow: WorkflowManager
-    private lateinit var interaction: InteractionManager
+    lateinit var settings: SettingsManager
+    lateinit var history: HistoryManager
+    lateinit var camera: CameraHandler
+    lateinit var workflow: WorkflowManager
+    lateinit var interaction: InteractionManager
     
     lateinit var resultImage: ImageView
     lateinit var btnPrint: Button
@@ -27,31 +27,29 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Базова ініціалізація
+        // 1. Ініціалізація менеджерів
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         
-        // 2. "ІНШИЙ ШЛЯХ" для історії: використовуємо внутрішню папку додатка.
-        // Це гарантує, що ми завжди бачимо свої файли без READ_EXTERNAL_STORAGE.
-        val historyDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "FlashFoto")
-        if (!historyDir.exists()) historyDir.mkdirs()
+        // Шлях для історії: Тільки оброблені фото (Edited)
+        val editedDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited")
+        if (!editedDir.exists()) editedDir.mkdirs()
         
-        history = HistoryManager(this, historyDir)
+        history = HistoryManager(this, editedDir)
         workflow = WorkflowManager(this, settings, history)
 
-        // 3. UI компоненти
+        // 2. UI Binding
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // 4. Логіка взаємодії (кнопки)
+        // 3. Setup Interaction (Кнопки)
         interaction = InteractionManager(this, camera, history, settings)
         interaction.setup()
 
-        // Автозапуск камери при старті
+        // Старт камери
         camera.capture()
     }
 
-    // Метод для вибору власного PNG шаблону (викликається з InteractionManager)
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -62,35 +60,29 @@ class MainActivity : Activity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        
         if (resultCode != RESULT_OK) return
 
         when (requestCode) {
-            // Результат з камери
             camera.REQUEST_CAPTURE -> {
                 workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
             }
-            
-            // Результат вибору шаблону
             REQUEST_PICK_TEMPLATE -> {
                 data?.data?.let { uri ->
-                    // Android 11+ вимагає Persistent URI або копіювання файлу.
-                    // Поки що просто зберігаємо URI як шлях (для тестів).
-                    settings.customTemplatePath = uri.toString()
-                    Toast.makeText(this, "Шаблон вибрано", Toast.LENGTH_SHORT).show()
+                    val savedPath = FileUtils.saveTemplate(this, uri)
+                    if (savedPath != null) {
+                        settings.customTemplatePath = savedPath
+                        Toast.makeText(this, "Шаблон успішно оновлено", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
-    // Метод відображення фото з історії
     fun display(file: File?) {
-        file?.let { 
-            if (it.exists()) {
-                val bitmap = BitmapFactory.decodeFile(it.absolutePath)
-                resultImage.setImageBitmap(bitmap)
-                btnPrint.visibility = View.VISIBLE
-            }
+        if (file != null && file.exists()) {
+            val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+            resultImage.setImageBitmap(bitmap)
+            btnPrint.visibility = View.VISIBLE
         }
     }
 
@@ -98,7 +90,7 @@ class MainActivity : Activity() {
         if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
             camera.capture()
         } else {
-            Toast.makeText(this, "Дозвіл відхилено", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Немає доступу до камери", Toast.LENGTH_LONG).show()
         }
     }
 }

@@ -5,66 +5,35 @@
     android:background="#121212"
     android:padding="12dp">
 
-    <ImageView
-        android:id="@+id/btnSettings"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentRight="true"
-        android:src="@android:drawable/ic_menu_preferences" />
+    <ImageView android:id="@+id/btnSettings" android:layout_width="48dp" android:layout_height="48dp"
+        android:layout_alignParentRight="true" android:src="@android:drawable/ic_menu_preferences" />
 
-    <ImageView
-        android:id="@+id/resultImage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/controls"
-        android:layout_below="@id/btnSettings"
-        android:scaleType="fitCenter" />
+    <ImageView android:id="@+id/resultImage" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:layout_above="@id/controls" android:layout_below="@id/btnSettings" android:scaleType="fitCenter" />
 
-    <LinearLayout
-        android:id="@+id/controls"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:orientation="vertical">
+    <LinearLayout android:id="@+id/controls" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" android:orientation="vertical">
 
-        <LinearLayout
-            android:id="@+id/rowPhoto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
+        <LinearLayout android:id="@+id/rowPhoto" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center" android:orientation="horizontal">
             <Button android:id="@+id/btnPhotoPrev" android:layout_width="50dp" android:layout_height="wrap_content" android:text="&lt;" />
             <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="ФОТО" android:gravity="center" android:textColor="#FFF" />
             <Button android:id="@+id/btnPhotoNext" android:layout_width="50dp" android:layout_height="wrap_content" android:text="&gt;" />
             <Button android:id="@+id/btnPhotoDel" android:layout_width="50dp" android:layout_height="wrap_content" android:text="DEL" android:textColor="#F44" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/rowFrame"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:layout_marginTop="4dp">
+        <LinearLayout android:id="@+id/rowFrame" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center" android:orientation="horizontal" android:layout_marginTop="4dp">
             <Button android:id="@+id/btnFramePrev" android:layout_width="50dp" android:layout_height="wrap_content" android:text="&lt;" />
             <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="РАМКА" android:gravity="center" android:textColor="#FFF" />
             <Button android:id="@+id/btnFrameNext" android:layout_width="50dp" android:layout_height="wrap_content" android:text="&gt;" />
             <Button android:id="@+id/btnFrameDel" android:layout_width="50dp" android:layout_height="wrap_content" android:text="DEL" android:textColor="#F44" />
         </LinearLayout>
 
-        <Button
-            android:id="@+id/btnCapture"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="#4CAF50"
-            android:text="ЗРОБИТИ НОВЕ ФОТО" />
+        <Button android:id="@+id/btnCapture" android:layout_width="match_parent" android:layout_height="50dp"
+            android:layout_marginTop="8dp" android:backgroundTint="#4CAF50" android:text="ЗРОБИТИ НОВЕ ФОТО" />
 
-        <Button
-            android:id="@+id/btnPrint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="ЗГЕНЕРУВАТИ ТА ДРУКУВАТИ"
-            android:visibility="gone" />
+        <Button android:id="@+id/btnPrint" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="ЗГЕНЕРУВАТИ ТА ДРУКУВАТИ" android:visibility="gone" />
     </LinearLayout>
 </RelativeLayout>

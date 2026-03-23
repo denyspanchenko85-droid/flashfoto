@@ -1,22 +1,23 @@
 package com.shadow.flashfoto
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import java.io.File
 
 object CompositionManager {
-    fun preview(context: Context, photoFile: File?, templateFile: File?, settings: SettingsManager): android.graphics.Bitmap? {
-        if (photoFile == null) return null
-        val photo = BitmapFactory.decodeFile(photoFile.absolutePath)
+    fun generatePreview(context: Context, photoFile: File?, templateFile: File?, settings: SettingsManager): Bitmap? {
+        if (photoFile == null || !photoFile.exists()) return null
         
-        // Використовуємо існуючий ImageOverlayProcessor, але з можливістю підміни файлу шаблону
+        val photo = BitmapFactory.decodeFile(photoFile.absolutePath) ?: return null
+        
         // Тимчасово підміняємо шлях у налаштуваннях для процесора
         val oldPath = settings.customTemplatePath
         if (templateFile != null) settings.customTemplatePath = templateFile.absolutePath
         
         val result = ImageOverlayProcessor.applyFrame(context, photo, settings)
         
-        settings.customTemplatePath = oldPath // повертаємо як було
+        settings.customTemplatePath = oldPath // повертаємо оригінал
         return result
     }
 }

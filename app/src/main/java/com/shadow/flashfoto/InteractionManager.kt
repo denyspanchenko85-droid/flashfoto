@@ -16,7 +16,7 @@ class InteractionManager(
 ) {
 
     fun setup() {
-        val rowFrame = activity.findViewById<View>(R.id.layerTemplates)
+        val rowFrame = activity.findViewById<View>(R.id.rowFrame)
         val isDual = settings.appMode == 1
         
         rowFrame.visibility = if (isDual) View.VISIBLE else View.GONE
@@ -24,41 +24,37 @@ class InteractionManager(
         activity.findViewById<Button>(R.id.btnCapture).setOnClickListener { camera.capture() }
 
         // Фото навігація
-        activity.findViewById<Button>(R.id.btnPrev).setOnClickListener {
-            val file = if (isDual) hRaw.getPrev() else hEdited.getPrev()
-            refreshPreview(file)
+        activity.findViewById<Button>(R.id.btnPhotoPrev).setOnClickListener {
+            if (isDual) hRaw.getPrev() else hEdited.getPrev()
+            refreshPreview()
         }
-
-        activity.findViewById<Button>(R.id.btnNext).setOnClickListener {
-            val file = if (isDual) hRaw.getNext() else hEdited.getNext()
-            refreshPreview(file)
+        activity.findViewById<Button>(R.id.btnPhotoNext).setOnClickListener {
+            if (isDual) hRaw.getNext() else hEdited.getNext()
+            refreshPreview()
         }
-
-        activity.findViewById<Button>(R.id.btnDelete).setOnClickListener {
+        activity.findViewById<Button>(R.id.btnPhotoDel).setOnClickListener {
             confirmDelete(if (isDual) hRaw else hEdited)
         }
 
         // Шаблон навігація (Layer 2)
-        activity.findViewById<Button>(R.id.btnTplPrev).setOnClickListener {
+        activity.findViewById<Button>(R.id.btnFramePrev).setOnClickListener {
             hTpl.getPrev()?.let { 
                 settings.customTemplatePath = it.absolutePath
-                refreshPreview(hRaw.getCurrent())
+                refreshPreview()
             }
         }
-
-        activity.findViewById<Button>(R.id.btnTplNext).setOnClickListener {
+        activity.findViewById<Button>(R.id.btnFrameNext).setOnClickListener {
             hTpl.getNext()?.let { 
                 settings.customTemplatePath = it.absolutePath
-                refreshPreview(hRaw.getCurrent())
+                refreshPreview()
             }
         }
-
-        activity.findViewById<Button>(R.id.btnTplDelete).setOnClickListener { confirmDelete(hTpl) }
+        activity.findViewById<Button>(R.id.btnFrameDel).setOnClickListener { confirmDelete(hTpl) }
 
         // Друк
         activity.findViewById<Button>(R.id.btnPrint).setOnClickListener {
             if (isDual) {
-                val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), settings.customTemplatePath, settings)
+                val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
                 bitmap?.let { PrintManager.print(activity, it, settings) }
             } else {
                 hEdited.getCurrent()?.let { PrintManager.printFromFile(activity, it, settings) }
@@ -70,13 +66,13 @@ class InteractionManager(
         }
     }
 
-    private fun refreshPreview(file: File? = null) {
+    private fun refreshPreview() {
         if (settings.appMode == 1) {
-            val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), settings.customTemplatePath, settings)
+            val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
             activity.resultImage.setImageBitmap(bitmap)
             activity.btnPrint.visibility = View.VISIBLE
         } else {
-            activity.display(file ?: hEdited.getCurrent())
+            activity.display(hEdited.getCurrent())
         }
     }
 
@@ -85,7 +81,7 @@ class InteractionManager(
             .setTitle("Видалення")
             .setMessage("Видалити цей файл?")
             .setPositiveButton("Так") { _, _ -> 
-                if (manager.deleteCurrent()) refreshPreview(manager.getCurrent())
+                if (manager.deleteCurrent()) refreshPreview()
             }
             .setNegativeButton("Ні", null).show()
     }

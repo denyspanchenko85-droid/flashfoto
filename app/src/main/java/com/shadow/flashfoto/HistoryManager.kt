@@ -1,5 +1,6 @@
 package com.shadow.flashfoto
 
+import android.util.Log
 import java.io.File
 
 class HistoryManager(private val directory: File) {
@@ -9,35 +10,40 @@ class HistoryManager(private val directory: File) {
     init { updateHistory() }
 
     fun updateHistory() {
-        // Додаємо перевірку exists(), щоб не було помилок, якщо папки ще немає
-        files = if (directory.exists()) {
-            directory.listFiles { f -> 
-                val ext = f.extension.lowercase()
-                ext == "jpg" || ext == "png" 
-            }?.sortedByDescending { it.lastModified() } ?: emptyList()
-        } else {
-            emptyList()
+        if (!directory.exists()) {
+            directory.mkdirs() // Створюємо папку, якщо її немає
         }
 
-        // ВАЖЛИВО: Коли ми робимо нове фото, ми хочемо, щоб воно стало поточним (індекс 0)
+        files = directory.listFiles { f -> 
+            val ext = f.extension.lowercase()
+            ext == "jpg" || ext == "jpeg" || ext == "png" 
+        }?.sortedByDescending { it.lastModified() } ?: emptyList()
+
+        // Після оновлення завжди стаємо на найсвіжіше фото
         if (files.isNotEmpty()) {
             currentIndex = 0
-        } else {
-            currentIndex = -1
         }
+        
+        Log.d("FlashFoto", "History updated. Found ${files.size} photos in ${directory.absolutePath}")
     }
 
-    // getNext — іде до НОВІШИХ фото (вгору по списку до 0)
-    fun getNext(): File? {
-        if (currentIndex > 0) currentIndex--
-        return files.getOrNull(currentIndex)
+    fun getNext(): File? { // Новіші (вгору до 0)
+        if (currentIndex > 0) {
+            currentIndex--
+            return files[currentIndex]
+        }
+        return null
     }
 
-    // getPrev — іде до СТАРІШИХ фото (вниз по списку до кінця)
-    fun getPrev(): File? {
-        if (currentIndex < files.size - 1) currentIndex++
-        return files.getOrNull(currentIndex)
+    fun getPrev(): File? { // Старіші (вниз до кінця списку)
+        if (currentIndex < files.size - 1) {
+            currentIndex++
+            return files[currentIndex]
+        }
+        return null
     }
     
     fun getCurrent(): File? = files.getOrNull(currentIndex)
+    
+    fun getCount(): Int = files.size
 }

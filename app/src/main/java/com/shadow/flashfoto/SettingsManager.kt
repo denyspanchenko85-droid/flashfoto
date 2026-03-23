@@ -16,4 +16,9 @@ class SettingsManager(context: Context) {
     var printerIp: String?
         get() = prefs.getString("printer_ip", "")
         set(value) = prefs.edit().putString("printer_ip", value).apply()
+
+    // Шлях до кастомного PNG шаблону
+    var customTemplatePath: String?
+        get() = prefs.getString("custom_template_path", null)
+        set(value) = prefs.edit().putString("custom_template_path", value).apply()
 }

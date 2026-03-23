@@ -16,71 +16,75 @@ class MainActivity : Activity() {
     private lateinit var history: HistoryManager
     private lateinit var camera: CameraHandler
     private lateinit var workflow: WorkflowManager
+    private lateinit var interaction: InteractionManager
     
-    private lateinit var resultImage: ImageView
-    private lateinit var btnPrint: Button
+    lateinit var resultImage: ImageView
+    lateinit var btnPrint: Button
+    
+    private val REQUEST_PICK_TEMPLATE = 2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 1. Ініціалізація менеджерів
+        // 1. Базова ініціалізація
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         
-        // Шлях до публічної папки Pictures/FlashFoto
-        val galleryDir = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), 
-            "FlashFoto"
-        )
+        // 2. "ІНШИЙ ШЛЯХ" для історії: використовуємо внутрішню папку додатка.
+        // Це гарантує, що ми завжди бачимо свої файли без READ_EXTERNAL_STORAGE.
+        val historyDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "FlashFoto")
+        if (!historyDir.exists()) historyDir.mkdirs()
         
-        // Передаємо 'this' (context), щоб History міг писати в лог-файл
-        history = HistoryManager(this, galleryDir)
+        history = HistoryManager(this, historyDir)
         workflow = WorkflowManager(this, settings, history)
 
+        // 3. UI компоненти
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // 2. Налаштування кнопок
-        findViewById<Button>(R.id.btnCapture).setOnClickListener { 
-            camera.capture() 
-        }
+        // 4. Логіка взаємодії (кнопки)
+        interaction = InteractionManager(this, camera, history, settings)
+        interaction.setup()
 
-        findViewById<Button>(R.id.btnPrev).setOnClickListener { 
-            val file = history.getPrev()
-            if (file != null) display(file) 
-            else Toast.makeText(this, "Це початок історії", Toast.LENGTH_SHORT).show()
-        }
-
-        findViewById<Button>(R.id.btnNext).setOnClickListener { 
-            val file = history.getNext()
-            if (file != null) display(file) 
-            else Toast.makeText(this, "Це останнє фото", Toast.LENGTH_SHORT).show()
-        }
-        
-        findViewById<ImageView>(R.id.btnSettings).setOnClickListener { 
-            SettingsDialogHandler(this, settings).show() 
-        }
-        
-        btnPrint.setOnClickListener { 
-            history.getCurrent()?.let { 
-                PrintManager.printFromFile(this, it, settings) 
-            }
-        }
-
-        // Автозапуск камери
+        // Автозапуск камери при старті
         camera.capture()
+    }
+
+    // Метод для вибору власного PNG шаблону (викликається з InteractionManager)
+    fun pickTemplateIntent() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/png"
+        }
+        startActivityForResult(intent, REQUEST_PICK_TEMPLATE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == camera.REQUEST_CAPTURE && resultCode == RESULT_OK) {
-            // Workflow обробить фото, збереже в галерею і дасть команду історії оновитися
-            workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
+        
+        if (resultCode != RESULT_OK) return
+
+        when (requestCode) {
+            // Результат з камери
+            camera.REQUEST_CAPTURE -> {
+                workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
+            }
+            
+            // Результат вибору шаблону
+            REQUEST_PICK_TEMPLATE -> {
+                data?.data?.let { uri ->
+                    // Android 11+ вимагає Persistent URI або копіювання файлу.
+                    // Поки що просто зберігаємо URI як шлях (для тестів).
+                    settings.customTemplatePath = uri.toString()
+                    Toast.makeText(this, "Шаблон вибрано", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
-    private fun display(file: File?) {
+    // Метод відображення фото з історії
+    fun display(file: File?) {
         file?.let { 
             if (it.exists()) {
                 val bitmap = BitmapFactory.decodeFile(it.absolutePath)
@@ -93,6 +97,8 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
         if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
             camera.capture()
+        } else {
+            Toast.makeText(this, "Дозвіл відхилено", Toast.LENGTH_SHORT).show()
         }
     }
 }

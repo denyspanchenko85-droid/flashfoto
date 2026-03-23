@@ -1,3 +1,4 @@
+// Responsibility: Main orchestrator for printer management dialog
 package com.shadow.flashfoto
 
 import android.app.AlertDialog
@@ -24,7 +25,7 @@ class PrinterDialogHandler(private val context: Context) {
         val btnWifiDirect = Button(context).apply {
             text = "Пошук Wi-Fi Direct (P2P)"
             setOnClickListener { 
-                wifiHandler.start { show() } // Перезапуск діалогу після успіху
+                wifiHandler.start { show() } 
             }
         }
         mainLayout.addView(btnWifiDirect)
@@ -35,9 +36,12 @@ class PrinterDialogHandler(private val context: Context) {
             setPadding(0, 20, 0, 20)
         }
         
-        // Початковий рендер
-        val refresh = { listRenderer.fill(listLayout) { refresh() } }
-        listRenderer.fill(listLayout) { listRenderer.fill(listLayout) { /* оновлення всередині */ } }
+        // Локальна функція для оновлення вмісту списку
+        fun refresh() {
+            listRenderer.fill(listLayout) { refresh() }
+        }
+
+        refresh()
 
         val scroll = ScrollView(context).apply {
             layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
@@ -49,7 +53,7 @@ class PrinterDialogHandler(private val context: Context) {
         val btnAdd = Button(context).apply {
             text = "+ Додати IP вручну"
             setOnClickListener { 
-                manualHandler.show { listRenderer.fill(listLayout) { /* оновлення */ } } 
+                manualHandler.show { refresh() } 
             }
         }
         mainLayout.addView(btnAdd)

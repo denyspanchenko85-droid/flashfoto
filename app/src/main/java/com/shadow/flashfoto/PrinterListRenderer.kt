@@ -1,3 +1,4 @@
+// Responsibility: UI generation for the printer list entries
 package com.shadow.flashfoto
 
 import android.content.Context

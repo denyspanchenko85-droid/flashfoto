@@ -18,14 +18,17 @@ class SettingsDialogHandler(private val context: Context, private val settings: 
             setPadding(60, 40, 60, 10)
         }
 
+        // 1. РЕЖИМ РОБОТИ (RadioButtons)
         layout.addView(TextView(context).apply { text = "Режим роботи:"; setPadding(0, 10, 0, 10) })
         val rgMode = RadioGroup(context)
         val rbHistory = RadioButton(context).apply { text = "Історія (Готові)"; id = View.generateViewId() }
         val rbDual = RadioButton(context).apply { text = "Конструктор (2 шари)"; id = View.generateViewId() }
+        
         rgMode.addView(rbHistory); rgMode.addView(rbDual)
         if (settings.appMode == 0) rbHistory.isChecked = true else rbDual.isChecked = true
         layout.addView(rgMode)
 
+        // 2. ЧЕКБОКСИ
         val checkAutoPrint = CheckBox(context).apply {
             text = "Автоматичний друк"
             isChecked = settings.isAutoPrintEnabled
@@ -38,26 +41,36 @@ class SettingsDialogHandler(private val context: Context, private val settings: 
         }
         layout.addView(checkKeepRaw)
 
+        // 3. ШАБЛОНИ
+        layout.addView(TextView(context).apply { text = "\nШаблони:"; textSize = 14f })
         val btnImport = Button(context).apply {
             text = "Додати новий PNG..."
             setOnClickListener { (context as? MainActivity)?.pickTemplateIntent() }
         }
         layout.addView(btnImport)
 
-        val editIp = EditText(context).apply {
-            hint = "IP принтера"
-            setText(settings.printerIp)
+        // 4. УПРАВЛІННЯ ПРИНТЕРАМИ (ЗАМІСТЬ IP EDITTEXT)
+        layout.addView(TextView(context).apply { text = "\nПринтер:"; textSize = 14f })
+        
+        val printerManager = PrinterManager(context)
+        val btnManagePrinters = Button(context).apply {
+            val activeIp = printerManager.getActiveIp()
+            text = if (activeIp.isEmpty()) "Вибрати принтер" else "Принтер: $activeIp"
+            setOnClickListener { 
+                // Викликаємо нове вікно керування принтерами
+                PrinterDialogHandler(context).show() 
+            }
         }
-        layout.addView(editIp)
+        layout.addView(btnManagePrinters)
 
         builder.setView(layout)
         builder.setPositiveButton("Зберегти") { _, _ ->
             settings.appMode = if (rbHistory.isChecked) 0 else 1
             settings.isAutoPrintEnabled = checkAutoPrint.isChecked
             settings.isKeepOriginalEnabled = checkKeepRaw.isChecked
-            settings.printerIp = editIp.text.toString()
             
-            // Тепер Activity імпортовано правильно
+            // IP тепер зберігається всередині PrinterManager через його власний діалог
+            
             (context as? Activity)?.recreate()
         }
         builder.setNegativeButton("Скасувати", null)

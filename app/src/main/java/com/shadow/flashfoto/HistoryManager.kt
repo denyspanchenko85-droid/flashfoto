@@ -6,8 +6,10 @@ class HistoryManager(private val directory: File) {
     private var files: List<File> = emptyList()
     var currentIndex: Int = -1
 
+    init { updateHistory() }
+
     fun updateHistory() {
-        files = directory.listFiles { file -> file.extension == "jpg" || file.extension == "png" }
+        files = directory.listFiles { f -> f.extension == "jpg" || f.extension == "png" }
             ?.sortedByDescending { it.lastModified() } ?: emptyList()
         if (currentIndex == -1 && files.isNotEmpty()) currentIndex = 0
     }

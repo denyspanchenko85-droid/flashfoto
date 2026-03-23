@@ -11,8 +11,6 @@ object ImageOverlayProcessor {
 
         val w = photo.width
         val h = photo.height
-        
-        // Вибір ресурсу за орієнтацією
         val resId = if (w > h) R.drawable.easter_horiz_1 else R.drawable.easter_vert_1
         
         val frame = BitmapFactory.decodeResource(context.resources, resId) ?: return photo

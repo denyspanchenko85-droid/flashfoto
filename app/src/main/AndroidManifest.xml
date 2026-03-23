@@ -12,6 +12,7 @@
     </queries>
 
     <application
+        android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         android:label="FlashFoto"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">

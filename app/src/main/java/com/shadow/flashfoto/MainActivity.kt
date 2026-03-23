@@ -1,31 +1,19 @@
 package com.shadow.flashfoto
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.provider.MediaStore
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.print.PrintHelper
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : Activity() {
-    private val REQUEST_IMAGE_CAPTURE = 1
-    private val PERMISSION_REQUEST_CAMERA = 100
-    
     private lateinit var settings: SettingsManager
     private lateinit var history: HistoryManager
-    private var currentPhotoPath: String? = null
+    private lateinit var camera: CameraHandler
     
     private lateinit var resultImage: ImageView
     private lateinit var btnPrint: Button
@@ -33,86 +21,73 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
+
+        // Ініціалізація
         settings = SettingsManager(this)
-        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
-        history = HistoryManager(storageDir)
+        camera = CameraHandler(this)
+        history = HistoryManager(getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!)
 
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        findViewById<Button>(R.id.btnCapture).setOnClickListener { checkPermissionAndCapture() }
-        findViewById<Button>(R.id.btnPrev).setOnClickListener { showImage(history.getPrev()) }
-        findViewById<Button>(R.id.btnNext).setOnClickListener { showImage(history.getNext()) }
-        btnPrint.setOnClickListener { 
-            val file = history.getCurrent()
-            if (file != null) doPrint(BitmapFactory.decodeFile(file.absolutePath))
-        }
-
-        checkPermissionAndCapture()
-    }
-
-    private fun checkPermissionAndCapture() {
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            dispatchTakePictureIntent()
-        } else {
-            requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CAMERA)
-        }
-    }
-
-    private fun dispatchTakePictureIntent() {
-        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        val photoFile = try {
-            createImageFile()
-        } catch (ex: Exception) {
-            Logger.log(this, "File creation failed", ex)
-            null
+        // Кнопки - тепер кожна в один рядок
+        findViewById<Button>(R.id.btnCapture).setOnClickListener { camera.capture() }
+        findViewById<Button>(R.id.btnPrev).setOnClickListener { display(history.getPrev()) }
+        findViewById<Button>(R.id.btnNext).setOnClickListener { display(history.getNext()) }
+        
+        // Виклик винесеного діалогу
+        findViewById<ImageView>(R.id.btnSettings).setOnClickListener { 
+            SettingsDialogHandler(this, settings).show() 
         }
         
-        photoFile?.let {
-            val photoURI: Uri = FileProvider.getUriForFile(this, "com.shadow.flashfoto.provider", it)
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
-        }
-    }
+        btnPrint.setOnClickListener { history.getCurrent()?.let { printFile(it) } }
 
-    private fun createImageFile(): File? {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile("JPEG_${timeStamp}_", ".jpg", storageDir).apply {
-            currentPhotoPath = absolutePath
-        }
+        camera.capture()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            try {
-                val photo = BitmapFactory.decodeFile(currentPhotoPath)
-                val finalBitmap = ImageOverlayProcessor.applyFrame(this, photo)
-                
-                resultImage.setImageBitmap(finalBitmap)
-                btnPrint.visibility = View.VISIBLE
-                
-                history.updateHistory()
-                
-                if (settings.isAutoPrintEnabled) {
-                    doPrint(finalBitmap)
+        if (requestCode == camera.REQUEST_CAPTURE && resultCode == RESULT_OK) {
+            processResult()
+        }
+    }
+    private fun processResult() {
+        try {
+            val rawPath = camera.currentPhotoPath ?: return
+            val photo = BitmapFactory.decodeFile(rawPath)
+            val finalBitmap = ImageOverlayProcessor.applyFrame(this, photo) ?: return
+            
+            // 1. Показ та збереження результату
+            resultImage.setImageBitmap(finalBitmap)
+            btnPrint.visibility = View.VISIBLE
+            GalleryManager.saveToGallery(this, finalBitmap)
+            history.updateHistory()
+
+            // 2. ДРУК
+            if (settings.isAutoPrintEnabled) printBitmap(finalBitmap)
+
+            // 3. ПЕРЕВІРКА: Видаляти оригінал чи ні?
+            if (!settings.isKeepOriginalEnabled) {
+                val rawFile = java.io.File(rawPath)
+                if (rawFile.exists()) {
+                    rawFile.delete()
+                    // Очищаємо шлях, щоб не було помилок при повторному доступі
+                    camera.currentPhotoPath = null 
                 }
-            } catch (e: Exception) {
-                Logger.log(this, "Overlay or print error", e)
             }
+            
+        } catch (e: Exception) {
+            Logger.log(this, "Process result error", e)
         }
     }
 
-    private fun showImage(file: File?) {
-        file?.let {
-            val bitmap = BitmapFactory.decodeFile(it.absolutePath)
-            resultImage.setImageBitmap(bitmap)
-        }
+    private fun display(file: java.io.File?) {
+        file?.let { resultImage.setImageBitmap(BitmapFactory.decodeFile(it.absolutePath)) }
     }
 
-    private fun doPrint(bitmap: android.graphics.Bitmap?) {
+    private fun printFile(file: java.io.File) = printBitmap(BitmapFactory.decodeFile(file.absolutePath))
+
+    private fun printBitmap(bitmap: android.graphics.Bitmap?) {
         bitmap?.let {
             PrintHelper(this).apply {
                 scaleMode = PrintHelper.SCALE_MODE_FIT
@@ -121,9 +96,7 @@ class MainActivity : Activity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == PERMISSION_REQUEST_CAMERA && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            dispatchTakePictureIntent()
-        }
+    override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
+        if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) camera.capture()
     }
 }

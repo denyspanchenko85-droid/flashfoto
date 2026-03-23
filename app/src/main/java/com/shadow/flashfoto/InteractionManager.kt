@@ -2,6 +2,7 @@ package com.shadow.flashfoto
 
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 
 class InteractionManager(
     private val activity: MainActivity,
@@ -18,7 +19,6 @@ class InteractionManager(
         val isDual = settings.appMode == 1
         
         rowFrame.visibility = if (isDual) View.VISIBLE else View.GONE
-        refreshPreview()
 
         activity.findViewById<Button>(R.id.btnCapture).setOnClickListener { camera.capture() }
 
@@ -32,7 +32,7 @@ class InteractionManager(
             refreshPreview()
         }
         
-        // Видалення Фото (викликає Workflow)
+        // Видалення Фото
         activity.findViewById<Button>(R.id.btnPhotoDel).setOnClickListener {
             workflow.deleteWithConfirm(if (isDual) hRaw else hEdited) { refreshPreview() }
         }
@@ -51,7 +51,7 @@ class InteractionManager(
             }
         }
         
-        // Видалення Шаблону (викликає Workflow)
+        // Видалення Шаблону
         activity.findViewById<Button>(R.id.btnFrameDel).setOnClickListener {
             workflow.deleteWithConfirm(hTpl) { refreshPreview() }
         }
@@ -65,22 +65,40 @@ class InteractionManager(
                     PrintManager.print(activity, it, settings)
                 }
             } else {
-                hEdited.getCurrent()?.let { PrintManager.printFromFile(activity, it, settings) }
+                hEdited.getCurrent()?.let { file ->
+                    PrintManager.printFromFile(activity, file, settings)
+                }
             }
+        }
+        
+        // Share
+        activity.findViewById<View>(R.id.btnShare).setOnClickListener {
+            ShareManager.share(activity, hEdited.getCurrent())
         }
         
         activity.findViewById<View>(R.id.btnSettings).setOnClickListener { 
             SettingsDialogHandler(activity, settings).show() 
         }
+
+        refreshPreview()
     }
 
     fun refreshPreview() {
+        val btnShare = activity.findViewById<View>(R.id.btnShare)
+        
         if (settings.appMode == 1) {
+            // Режим Конструктора
             val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
             activity.resultImage.setImageBitmap(bitmap)
             activity.btnPrint.visibility = View.VISIBLE
+            btnShare.visibility = View.GONE // Ховаємо Share у другому режимі
         } else {
-            activity.display(hEdited.getCurrent())
+            // Режим Історії
+            val currentFile = hEdited.getCurrent()
+            activity.display(currentFile)
+            
+            // Показуємо Share тільки якщо є що відправляти
+            btnShare.visibility = if (currentFile != null) View.VISIBLE else View.GONE
         }
     }
 }

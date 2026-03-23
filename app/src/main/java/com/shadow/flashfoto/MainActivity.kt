@@ -41,7 +41,7 @@ class MainActivity : Activity() {
         interaction = InteractionManager(this, camera, hEdited, hRaw, hTpl, settings)
         interaction.setup()
 
-        // ПУНКТ 2: Камера більше не запускається автоматично при старті
+        // Камера сама НЕ запускається при старті
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -53,12 +53,11 @@ class MainActivity : Activity() {
                     workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
                     hRaw.updateHistory()
                 } else {
-                    // ПУНКТ 1: Видаляємо пустий файл, якщо користувач натиснув "назад" у камері
-                    camera.cleanup()
+                    camera.cleanup() // Видаляємо пустий RAW
                     interaction.refreshPreview()
                 }
             }
-            2 -> {
+            2 -> { // REQUEST_PICK_TEMPLATE
                 if (resultCode == RESULT_OK) {
                     data?.data?.let { uri ->
                         val path = FileUtils.saveCustomTemplate(this, uri)

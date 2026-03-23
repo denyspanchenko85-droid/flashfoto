@@ -3,7 +3,6 @@ package com.shadow.flashfoto
 import android.app.AlertDialog
 import android.view.View
 import android.widget.Button
-import android.widget.Toast
 import java.io.File
 
 class InteractionManager(
@@ -20,6 +19,7 @@ class InteractionManager(
         val isDual = settings.appMode == 1
         
         rowFrame.visibility = if (isDual) View.VISIBLE else View.GONE
+        refreshPreview()
 
         activity.findViewById<Button>(R.id.btnCapture).setOnClickListener { camera.capture() }
 
@@ -66,7 +66,8 @@ class InteractionManager(
         }
     }
 
-    private fun refreshPreview() {
+    // ТЕПЕР ВІДКРИТИЙ (Public за замовчуванням у Kotlin)
+    fun refreshPreview() {
         if (settings.appMode == 1) {
             val bitmap = CompositionManager.generatePreview(activity, hRaw.getCurrent(), hTpl.getCurrent(), settings)
             activity.resultImage.setImageBitmap(bitmap)

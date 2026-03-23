@@ -18,12 +18,10 @@ class SettingsDialogHandler(private val context: Context, private val settings: 
             setPadding(60, 40, 60, 10)
         }
 
-        // РЕЖИМ РОБОТИ (RadioButtons)
         layout.addView(TextView(context).apply { text = "Режим роботи:"; setPadding(0, 10, 0, 10) })
         val rgMode = RadioGroup(context)
         val rbHistory = RadioButton(context).apply { text = "Історія (Готові)"; id = View.generateViewId() }
         val rbDual = RadioButton(context).apply { text = "Конструктор (2 шари)"; id = View.generateViewId() }
-        
         rgMode.addView(rbHistory); rgMode.addView(rbDual)
         if (settings.appMode == 0) rbHistory.isChecked = true else rbDual.isChecked = true
         layout.addView(rgMode)
@@ -34,7 +32,12 @@ class SettingsDialogHandler(private val context: Context, private val settings: 
         }
         layout.addView(checkAutoPrint)
 
-        // Кнопки завантаження та IP...
+        val checkKeepRaw = CheckBox(context).apply {
+            text = "Зберігати оригінали (Raw)"
+            isChecked = settings.isKeepOriginalEnabled
+        }
+        layout.addView(checkKeepRaw)
+
         val btnImport = Button(context).apply {
             text = "Додати новий PNG..."
             setOnClickListener { (context as? MainActivity)?.pickTemplateIntent() }
@@ -51,11 +54,13 @@ class SettingsDialogHandler(private val context: Context, private val settings: 
         builder.setPositiveButton("Зберегти") { _, _ ->
             settings.appMode = if (rbHistory.isChecked) 0 else 1
             settings.isAutoPrintEnabled = checkAutoPrint.isChecked
+            settings.isKeepOriginalEnabled = checkKeepRaw.isChecked
             settings.printerIp = editIp.text.toString()
             
-            // Перезапуск для оновлення кнопок на головному екрані
+            // Тепер Activity імпортовано правильно
             (context as? Activity)?.recreate()
         }
+        builder.setNegativeButton("Скасувати", null)
         builder.show()
     }
 }

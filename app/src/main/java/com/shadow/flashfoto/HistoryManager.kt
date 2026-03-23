@@ -11,34 +11,33 @@ class HistoryManager(private val context: Context, private val directory: File) 
 
     fun updateHistory() {
         if (!directory.exists()) directory.mkdirs()
-
         files = directory.listFiles { f -> 
             val ext = f.extension.lowercase()
             ext == "jpg" || ext == "jpeg" || ext == "png" 
         }?.sortedByDescending { it.lastModified() } ?: emptyList()
 
-        if (files.isNotEmpty()) {
-            currentIndex = 0
-        }
-        
-        // ТЕПЕР ПИШЕМО В ТВОЙ ФАЙЛ
-        Logger.log(context, "Історія оновлена. Знайдено фото: ${files.size} у папці ${directory.name}")
+        if (files.isNotEmpty() && currentIndex == -1) currentIndex = 0
+        Logger.log(context, "Папка ${directory.name}: знайдено ${files.size}")
     }
 
     fun getNext(): File? {
-        if (currentIndex > 0) {
-            currentIndex--
-            return files[currentIndex]
-        }
+        if (currentIndex > 0) { currentIndex--; return files[currentIndex] }
         return null
     }
 
     fun getPrev(): File? {
-        if (currentIndex < files.size - 1) {
-            currentIndex++
-            return files[currentIndex]
-        }
+        if (currentIndex < files.size - 1) { currentIndex++; return files[currentIndex] }
         return null
+    }
+
+    fun deleteCurrent(): Boolean {
+        val file = getCurrent() ?: return false
+        if (file.delete()) {
+            updateHistory()
+            if (currentIndex >= files.size) currentIndex = files.size - 1
+            return true
+        }
+        return false
     }
     
     fun getCurrent(): File? = files.getOrNull(currentIndex)

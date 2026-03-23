@@ -1,7 +1,7 @@
 # Project: flashfoto
 
 ## Project Status
-Updated: 2026-03-23 18:24
+Updated: 2026-03-24 00:25
 
 ## File Structure
 ```
@@ -11,6 +11,7 @@ Updated: 2026-03-23 18:24
 │   ├── build.gradle.kts
 │   └── src
 │       └── main
+│           ├── 1024.png
 │           ├── AndroidManifest.xml
 │           ├── java
 │           │   └── com
@@ -18,6 +19,7 @@ Updated: 2026-03-23 18:24
 │           │           └── flashfoto
 │           │               ├── Bootstrapper.kt
 │           │               ├── CameraHandler.kt
+│           │               ├── CompositionManager.kt
 │           │               ├── FileUtils.kt
 │           │               ├── GalleryManager.kt
 │           │               ├── HistoryManager.kt
@@ -26,16 +28,51 @@ Updated: 2026-03-23 18:24
 │           │               ├── InteractionManager.kt
 │           │               ├── Logger.kt
 │           │               ├── MainActivity.kt
+│           │               ├── ManualPrinterHandler.kt
 │           │               ├── PrintManager.kt
+│           │               ├── PrinterDialogHandler.kt
+│           │               ├── PrinterListRenderer.kt
+│           │               ├── PrinterManager.kt
+│           │               ├── PrinterModel.kt
 │           │               ├── SettingsDialogHandler.kt
 │           │               ├── SettingsManager.kt
+│           │               ├── ShareManager.kt
+│           │               ├── WifiDirectLifecycleHelper.kt
+│           │               ├── WifiDirectManager.kt
+│           │               ├── WifiDirectReceiver.kt
+│           │               ├── WifiDiscoveryHandler.kt
 │           │               └── WorkflowManager.kt
+│           ├── play_store_512.png
 │           └── res
 │               ├── drawable
 │               │   ├── easter_horiz_1.png
 │               │   └── easter_vert_1.png
 │               ├── layout
 │               │   └── activity_main.xml
+│               ├── mipmap-anydpi-v26
+│               │   └── ic_launcher.xml
+│               ├── mipmap-hdpi
+│               │   ├── ic_launcher.png
+│               │   ├── ic_launcher_adaptive_back.png
+│               │   └── ic_launcher_adaptive_fore.png
+│               ├── mipmap-mdpi
+│               │   ├── ic_launcher.png
+│               │   ├── ic_launcher_adaptive_back.png
+│               │   └── ic_launcher_adaptive_fore.png
+│               ├── mipmap-xhdpi
+│               │   ├── ic_launcher.png
+│               │   ├── ic_launcher_adaptive_back.png
+│               │   └── ic_launcher_adaptive_fore.png
+│               ├── mipmap-xxhdpi
+│               │   ├── ic_launcher.png
+│               │   ├── ic_launcher_adaptive_back.png
+│               │   └── ic_launcher_adaptive_fore.png
+│               ├── mipmap-xxxhdpi
+│               │   ├── ic_launcher.png
+│               │   ├── ic_launcher_adaptive_back.png
+│               │   └── ic_launcher_adaptive_fore.png
+│               ├── values
+│               │   └── themes.xml
 │               └── xml
 │                   └── file_paths.xml
 ├── build.gradle.kts
@@ -45,11 +82,15 @@ Updated: 2026-03-23 18:24
 ├── gradle.properties
 └── settings.gradle.kts
 
-14 directories, 25 files
+21 directories, 55 files
 ```
 
 ## Logical Map (Auto-generated)
+- PrinterDialogHandler.kt: [Main orchestrator for printer management dialog]
+- PrinterListRenderer.kt: [UI generation for the printer list entries]
 - PrintManager.kt: [Logic for socket printing, system dialog, and file decoding]
+- PrinterManager.kt: [Persistent storage and management of printer list]
+- PrinterModel.kt: [Atomic data structure for printer entity]
 
 ## Next Steps
 - [x] Phase 1: Overlay Foundation (Stabilized)

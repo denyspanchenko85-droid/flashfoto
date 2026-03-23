@@ -18,7 +18,7 @@ class MainActivity : Activity() {
     lateinit var workflow: WorkflowManager
     lateinit var interaction: InteractionManager
     
-    // Утиліта для Wi-Fi Direct
+    // Утиліта для Wi-Fi Direct (керує ресівером)
     private lateinit var wifiLifecycleHelper: WifiDirectLifecycleHelper
     
     lateinit var resultImage: ImageView
@@ -28,37 +28,46 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 1. Ініціалізація бази та папок
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         Bootstrapper.run(this, settings)
         
+        // 2. Ініціалізація допоміжних утиліт
         wifiLifecycleHelper = WifiDirectLifecycleHelper(this)
 
+        // 3. Ініціалізація трьох потоків історії
         hEdited = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited"))
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
         hTpl = HistoryManager(this, File(getExternalFilesDir(null), "Templates"))
 
+        // 4. Ініціалізація логіки обробки (Workflow)
         workflow = WorkflowManager(this, settings, hEdited)
 
+        // 5. UI компоненти
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
+        // 6. Setup Interaction (Передаємо всі 7 аргументів)
+        // ShareManager не передається в конструктор, бо він викликається як статичний об'єкт
         interaction = InteractionManager(this, camera, hEdited, hRaw, hTpl, settings, workflow)
         interaction.setup()
+        
+        // Камера чекає на клік по кнопці, не стартує сама
     }
 
     override fun onResume() {
         super.onResume()
-        // Реєструємо слухача Wi-Fi Direct
+        // Активуємо слухача Wi-Fi Direct при поверненні в додаток
         wifiLifecycleHelper.register(
-            onPeersChanged = { /* Можна додати сповіщення в UI */ },
-            onConnectionChanged = { /* Логіка при зміні з'єднання */ }
+            onPeersChanged = { /* Події пошуку обробляються в WifiDiscoveryHandler */ },
+            onConnectionChanged = { /* Логіка зміни статусу мережі */ }
         )
     }
 
     override fun onPause() {
         super.onPause()
-        // Обов'язково відключаємо, щоб не висаджувати батарею
+        // Вимикаємо слухача для економії енергії та безпеки
         wifiLifecycleHelper.unregister()
     }
 
@@ -70,11 +79,11 @@ class MainActivity : Activity() {
                     workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
                     hRaw.updateHistory()
                 } else {
-                    camera.cleanup()
+                    camera.cleanup() // Видаляємо пустий файл, якщо скасували зйомку
                     interaction.refreshPreview()
                 }
             }
-            2 -> {
+            2 -> { // REQUEST_PICK_TEMPLATE
                 if (resultCode == RESULT_OK) {
                     data?.data?.let { uri ->
                         val path = FileUtils.saveCustomTemplate(this, uri)
@@ -89,10 +98,12 @@ class MainActivity : Activity() {
         }
     }
 
+    // Хелпер для відображення фото (викликається менеджерами)
     fun display(file: File?) {
         ImageDisplayHelper.show(file, resultImage, btnPrint)
     }
 
+    // Виклик системного вікна для вибору PNG
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)

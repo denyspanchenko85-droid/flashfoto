@@ -1,4 +1,3 @@
-// Responsibility: Main UI Controller and Lifecycle Orchestrator
 package com.shadow.flashfoto
 
 import android.content.Intent
@@ -6,7 +5,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
@@ -21,7 +19,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var interaction: InteractionManager
     
     private lateinit var wifiLifecycleHelper: WifiDirectLifecycleHelper
-    private lateinit var discoveryHandler: WifiDiscoveryHandler
     private lateinit var printerManager: PrinterManager
     
     lateinit var resultImage: ImageView
@@ -38,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         Bootstrapper.run(this, settings)
         
         wifiLifecycleHelper = WifiDirectLifecycleHelper(this)
-        discoveryHandler = WifiDiscoveryHandler(this, printerManager)
 
         hEdited = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited"))
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
@@ -49,8 +45,7 @@ class MainActivity : AppCompatActivity() {
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // Фікс помилки "No value passed for parameter 'history'": 
-        // Додаємо 8-й параметр (hRaw), який вимагає твій файл на диску.
+        // Responsibility: Initialize InteractionManager with exactly 7 parameters as provided in your snippet
         interaction = InteractionManager(
             this,      // activity
             camera,    // camera
@@ -58,11 +53,11 @@ class MainActivity : AppCompatActivity() {
             hRaw,      // hRaw
             hTpl,      // hTpl
             settings,  // settings
-            workflow,  // workflow
-            hRaw       // history (8-й параметр)
+            workflow   // workflow
         )
         interaction.setup()
 
+        // Кнопка друку тепер викликає PrinterDialogHandler
         btnPrint.setOnClickListener {
             PrinterDialogHandler(this).show()
         }
@@ -71,12 +66,14 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         wifiLifecycleHelper.register(
-            onPeersAvailable = { _ -> },
+            onPeersChanged = {
+                // Логіка оновлення списку (якщо потрібно в MainActivity)
+            },
             onConnectionChanged = {
                 val wdManager = WifiDirectManager(this)
                 wdManager.requestInfo { info ->
                     if (info.groupFormed) {
-                        Logger.log(this, "P2P Connection Established")
+                        Logger.log(this, "P2P Connection Active")
                     }
                 }
             }
@@ -115,8 +112,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // Фікс помилки "Unresolved reference: pickTemplateIntent":
-    // Повертаємо метод, який викликає SettingsDialogHandler
+    // Метод для SettingsDialogHandler
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)

@@ -13,13 +13,19 @@ class WifiDirectManager(private val context: Context) {
     fun discoverPeers(onPeersReady: (List<WifiP2pDevice>) -> Unit) {
         manager?.discoverPeers(channel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                // Список прийде в Receiver, але ми можемо зробити прямий запит для синхронності
-                manager?.requestPeers(channel) { peers -> onPeersReady(peers.deviceList.toList()) }
+                manager?.requestPeers(channel) { peers -> 
+                    onPeersReady(peers.deviceList.toList()) 
+                }
             }
             override fun onFailure(reason: Int) {
                 Logger.log(context, "Discovery Failed: $reason")
             }
         })
+    }
+
+    @SuppressLint("MissingPermission")
+    fun connect(device: WifiP2pDevice, onSuccess: () -> Unit) {
+        // Логіка підключення до пристрою
     }
 
     fun requestInfo(listener: WifiP2pManager.ConnectionInfoListener) {

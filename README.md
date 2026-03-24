@@ -1,7 +1,7 @@
 # Project: flashfoto
 
 ## Project Status
-Updated: 2026-03-24 09:59
+Updated: 2026-03-24 12:54
 
 ## File Structure
 ```
@@ -86,12 +86,15 @@ Updated: 2026-03-24 09:59
 ```
 
 ## Logical Map (Auto-generated)
-- MainActivity.kt: [Main entry point with Material 3 Dynamic Colors support]
+- MainActivity.kt: [Main UI Controller and Lifecycle Orchestrator]
 - PrinterDialogHandler.kt: [Main orchestrator for printer management dialog]
-- WifiDiscoveryHandler.kt: [Universal Wi-Fi P2P discovery handler (Android 10 to 14+)]
+- WifiDirectLifecycleHelper.kt: [Manage BroadcastReceiver lifecycle using shared WifiDirectManager]
+- WifiDiscoveryHandler.kt: [Universal Wi-Fi P2P discovery handler (Fixed start() signature)]
+- WifiDirectReceiver.kt: [Handle Wi-Fi P2P system events and trigger peer list updates]
 - PrinterListRenderer.kt: [UI generation for the printer list entries]
 - PrintManager.kt: [Logic for socket printing, system dialog, and file decoding]
 - PrinterManager.kt: [Persistent storage and management of printer list]
+- WifiDirectManager.kt: [Managed Wi-Fi Direct operations with public access for LifecycleHelper]
 - PrinterModel.kt: [Atomic data structure for printer entity]
 
 ## Next Steps

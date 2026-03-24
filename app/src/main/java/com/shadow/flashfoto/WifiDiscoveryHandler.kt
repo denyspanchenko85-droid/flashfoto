@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 class WifiDiscoveryHandler(private val context: Context, private val manager: PrinterManager) {
     private val wdManager = WifiDirectManager(context)
 
-    // start(onSuccess: () -> Unit) — відповідає виклику в PrinterDialogHandler
     fun start(onSuccess: () -> Unit) {
         val activity = context as? Activity ?: return
         
@@ -26,11 +25,9 @@ class WifiDiscoveryHandler(private val context: Context, private val manager: Pr
             return
         }
 
+        // Викликаємо пошук
         wdManager.discoverPeers { devices ->
-            if (devices.isNotEmpty()) {
-                // Тут логіка показу AlertDialog зі списком пристроїв
-                // і виклик onSuccess() після успішного wdManager.connect()
-            }
+            // Тут буде діалог вибору, який викликає onSuccess()
         }
     }
 }

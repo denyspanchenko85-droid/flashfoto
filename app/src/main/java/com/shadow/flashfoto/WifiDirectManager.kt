@@ -23,11 +23,6 @@ class WifiDirectManager(private val context: Context) {
         })
     }
 
-    @SuppressLint("MissingPermission")
-    fun connect(device: WifiP2pDevice, onSuccess: () -> Unit) {
-        // Логіка підключення до пристрою
-    }
-
     fun requestInfo(listener: WifiP2pManager.ConnectionInfoListener) {
         manager?.requestConnectionInfo(channel, listener)
     }

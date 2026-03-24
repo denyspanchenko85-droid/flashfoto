@@ -1,3 +1,4 @@
+// Responsibility: Main UI Controller and lifecycle orchestration
 package com.shadow.flashfoto
 
 import android.content.Intent
@@ -5,6 +6,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
@@ -40,12 +42,13 @@ class MainActivity : AppCompatActivity() {
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
         hTpl = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Templates"))
 
-        workflow = WorkflowManager(this, settings)
+        // FIX: WorkflowManager потребує 3 параметри (додано hEdited)
+        workflow = WorkflowManager(this, settings, hEdited)
         
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // Responsibility: Initialize InteractionManager with exactly 7 parameters as provided in your snippet
+        // FIX: InteractionManager строго 7 параметрів згідно з твоїм файлом
         interaction = InteractionManager(
             this,      // activity
             camera,    // camera
@@ -57,7 +60,6 @@ class MainActivity : AppCompatActivity() {
         )
         interaction.setup()
 
-        // Кнопка друку тепер викликає PrinterDialogHandler
         btnPrint.setOnClickListener {
             PrinterDialogHandler(this).show()
         }
@@ -66,15 +68,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         wifiLifecycleHelper.register(
-            onPeersChanged = {
-                // Логіка оновлення списку (якщо потрібно в MainActivity)
-            },
+            onPeersAvailable = { _ -> },
             onConnectionChanged = {
                 val wdManager = WifiDirectManager(this)
                 wdManager.requestInfo { info ->
-                    if (info.groupFormed) {
-                        Logger.log(this, "P2P Connection Active")
-                    }
+                    if (info.groupFormed) Logger.log(this, "P2P Connection Established")
                 }
             }
         )
@@ -83,6 +81,15 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         wifiLifecycleHelper.unregister()
+    }
+
+    // Потрібно для SettingsDialogHandler
+    fun pickTemplateIntent() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/png"
+        }
+        startActivityForResult(intent, 2)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -97,7 +104,7 @@ class MainActivity : AppCompatActivity() {
                     interaction.refreshPreview()
                 }
             }
-            2 -> { // Вибір шаблону
+            2 -> {
                 if (resultCode == RESULT_OK) {
                     data?.data?.let { uri ->
                         val path = FileUtils.saveCustomTemplate(this, uri)
@@ -110,15 +117,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    // Метод для SettingsDialogHandler
-    fun pickTemplateIntent() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/png"
-        }
-        startActivityForResult(intent, 2)
     }
 
     fun display(file: File?) {

@@ -1,3 +1,4 @@
+// Responsibility: Main UI Controller and Lifecycle Orchestrator
 package com.shadow.flashfoto
 
 import android.content.Intent
@@ -5,6 +6,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
@@ -47,7 +49,8 @@ class MainActivity : AppCompatActivity() {
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // Responsibility: Initialize InteractionManager strictly matching your provided code (7 params)
+        // Фікс помилки "No value passed for parameter 'history'": 
+        // Додаємо 8-й параметр (hRaw), який вимагає твій файл на диску.
         interaction = InteractionManager(
             this,      // activity
             camera,    // camera
@@ -55,11 +58,11 @@ class MainActivity : AppCompatActivity() {
             hRaw,      // hRaw
             hTpl,      // hTpl
             settings,  // settings
-            workflow   // workflow
+            workflow,  // workflow
+            hRaw       // history (8-й параметр)
         )
         interaction.setup()
 
-        // В MainActivity кнопка може просто відкривати діалог управління принтерами
         btnPrint.setOnClickListener {
             PrinterDialogHandler(this).show()
         }
@@ -68,9 +71,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         wifiLifecycleHelper.register(
-            onPeersAvailable = { devices ->
-                // Якщо діалог пошуку активний, він отримає список через свій механізм
-            },
+            onPeersAvailable = { _ -> },
             onConnectionChanged = {
                 val wdManager = WifiDirectManager(this)
                 wdManager.requestInfo { info ->
@@ -89,13 +90,49 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == camera.REQUEST_CAPTURE && resultCode == RESULT_OK) {
-            workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
-            hRaw.updateHistory()
+        when (requestCode) {
+            camera.REQUEST_CAPTURE -> {
+                if (resultCode == RESULT_OK) {
+                    workflow.execute(camera.currentPhotoPath, resultImage, btnPrint)
+                    hRaw.updateHistory()
+                } else {
+                    camera.cleanup()
+                    interaction.refreshPreview()
+                }
+            }
+            2 -> { // Вибір шаблону
+                if (resultCode == RESULT_OK) {
+                    data?.data?.let { uri ->
+                        val path = FileUtils.saveCustomTemplate(this, uri)
+                        if (path != null) {
+                            settings.customTemplatePath = path
+                            hTpl.updateHistory()
+                            interaction.refreshPreview()
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    // Фікс помилки "Unresolved reference: pickTemplateIntent":
+    // Повертаємо метод, який викликає SettingsDialogHandler
+    fun pickTemplateIntent() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/png"
+        }
+        startActivityForResult(intent, 2)
     }
 
     fun display(file: File?) {
         ImageDisplayHelper.show(file, resultImage, btnPrint)
+    }
+
+    override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
+        super.onRequestPermissionsResult(rc, p, g)
+        if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
+            camera.capture()
+        }
     }
 }

@@ -1,4 +1,3 @@
-// Responsibility: Main UI Controller and Orchestrator
 package com.shadow.flashfoto
 
 import android.content.Intent
@@ -6,7 +5,6 @@ import android.os.Bundle
 import android.os.Environment
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
@@ -49,21 +47,21 @@ class MainActivity : AppCompatActivity() {
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        // Responsibility: Initialize InteractionManager with named parameters to satisfy 'history'
+        // Responsibility: Initialize InteractionManager strictly matching your provided code (7 params)
         interaction = InteractionManager(
-            context = this,
-            camera = camera,
-            hEdited = hEdited,
-            hRaw = hRaw,
-            hTpl = hTpl,
-            settings = settings,
-            workflow = workflow,
-            history = hRaw // Додано для виправлення помилки "No value passed for parameter 'history'"
+            this,      // activity
+            camera,    // camera
+            hEdited,   // hEdited
+            hRaw,      // hRaw
+            hTpl,      // hTpl
+            settings,  // settings
+            workflow   // workflow
         )
         interaction.setup()
 
+        // В MainActivity кнопка може просто відкривати діалог управління принтерами
         btnPrint.setOnClickListener {
-            discoveryHandler.start()
+            PrinterDialogHandler(this).show()
         }
     }
 
@@ -71,17 +69,13 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         wifiLifecycleHelper.register(
             onPeersAvailable = { devices ->
-                if (devices.isNotEmpty()) {
-                    discoveryHandler.showPeerDialog(devices) {
-                        Toast.makeText(this, "Принтер підключено", Toast.LENGTH_SHORT).show()
-                    }
-                }
+                // Якщо діалог пошуку активний, він отримає список через свій механізм
             },
             onConnectionChanged = {
                 val wdManager = WifiDirectManager(this)
                 wdManager.requestInfo { info ->
                     if (info.groupFormed) {
-                        Logger.log(this, "Connected. Owner: ${info.isGroupOwner}")
+                        Logger.log(this, "P2P Connection Established")
                     }
                 }
             }
@@ -103,20 +97,5 @@ class MainActivity : AppCompatActivity() {
 
     fun display(file: File?) {
         ImageDisplayHelper.show(file, resultImage, btnPrint)
-    }
-
-    fun pickTemplateIntent() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/png"
-        }
-        startActivityForResult(intent, 2)
-    }
-
-    override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
-        super.onRequestPermissionsResult(rc, p, g)
-        if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
-            camera.capture()
-        }
     }
 }

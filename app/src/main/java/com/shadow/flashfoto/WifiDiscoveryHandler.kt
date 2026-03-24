@@ -1,4 +1,4 @@
-// Responsibility: Universal Wi-Fi P2P discovery handler (Android 10 to 14+)
+// Responsibility: Universal UI handler for device discovery and selection
 package com.shadow.flashfoto
 
 import android.Manifest
@@ -10,73 +10,53 @@ import android.os.Build
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.net.wifi.p2p.WifiP2pDevice
 
-class WifiDiscoveryHandler(private val context: Context, private val manager: PrinterManager) {
+class WifiDiscoveryHandler(private val context: Context, private val printerManager: PrinterManager) {
+    private val wdManager = WifiDirectManager(context)
 
-    fun start(onSuccess: () -> Unit) {
+    fun start() {
         val activity = context as? Activity ?: return
-
-        // 1. Формуємо список дозволів залежно від версії
         val permissions = mutableListOf<String>()
         
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.NEARBY_WIFI_DEVICES)
-            // На нових Android локація потрібна тільки якщо ми хочемо знати координати, 
-            // але для стабільності P2P краще запитати і її.
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         } else {
-            // Android 10, 11, 12
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
 
-        // 2. Перевірка відсутніх дозволів
         val missing = permissions.filter {
             ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
         }
 
         if (missing.isNotEmpty()) {
             ActivityCompat.requestPermissions(activity, missing.toTypedArray(), 1001)
-            Toast.makeText(context, "Надайте дозволи для роботи з Wi-Fi", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // 3. Запуск сканування
-        Toast.makeText(context, "Шукаю пристрої...", Toast.LENGTH_SHORT).show()
-        
-        val wdManager = WifiDirectManager(context)
-        wdManager.discoverPeers { peerList ->
-            val devices = peerList.deviceList.toMutableList()
-            
-            if (devices.isEmpty()) {
-                val msg = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
-                    "Пристроїв не знайдено. Перевірте, чи увімкнено GPS та Wi-Fi Direct!"
-                } else {
-                    "Пристроїв не знайдено. Перевірте налаштування принтера."
-                }
-                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
-                return@discoverPeers
-            }
+        wdManager.discoverPeers()
+    }
 
-            val deviceNames = devices.map { "${it.deviceName}\n${it.deviceAddress}" }.toTypedArray()
+    fun showPeerDialog(devices: List<WifiP2pDevice>, onSuccess: () -> Unit) {
+        if (devices.isEmpty()) return
 
-            AlertDialog.Builder(context)
-                .setTitle("Виберіть принтер")
-                .setItems(deviceNames) { _, which ->
-                    val selected = devices[which]
-                    Toast.makeText(context, "З'єднуюсь з ${selected.deviceName}...", Toast.LENGTH_SHORT).show()
-                    
-                    wdManager.connect(selected) {
-                        wdManager.requestInfo { info ->
-                            if (info.groupFormed) {
-                                val ip = info.groupOwnerAddress.hostAddress
-                                manager.addPrinter(selected.deviceName, ip, ConnectionType.WIFI_DIRECT)
-                                manager.setActive(ip)
-                                Toast.makeText(context, "Готово! IP: $ip", Toast.LENGTH_LONG).show()
-                                onSuccess()
-                            }
+        val deviceNames = devices.map { "${it.deviceName}\n${it.deviceAddress}" }.toTypedArray()
+
+        AlertDialog.Builder(context)
+            .setTitle("Виберіть принтер")
+            .setItems(deviceNames) { _, which ->
+                val selected = devices[which]
+                wdManager.connect(selected) {
+                    wdManager.requestInfo { info ->
+                        if (info.groupFormed) {
+                            val ip = info.groupOwnerAddress.hostAddress
+                            printerManager.addPrinter(selected.deviceName, ip, ConnectionType.WIFI_DIRECT)
+                            printerManager.setActive(ip)
+                            onSuccess()
                         }
                     }
-                }.show()
-        }
+                }
+            }.show()
     }
 }

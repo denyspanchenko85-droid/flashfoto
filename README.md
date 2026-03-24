@@ -1,7 +1,7 @@
 # Project: flashfoto
 
 ## Project Status
-Updated: 2026-03-24 00:25
+Updated: 2026-03-24 09:59
 
 ## File Structure
 ```
@@ -86,7 +86,9 @@ Updated: 2026-03-24 00:25
 ```
 
 ## Logical Map (Auto-generated)
+- MainActivity.kt: [Main entry point with Material 3 Dynamic Colors support]
 - PrinterDialogHandler.kt: [Main orchestrator for printer management dialog]
+- WifiDiscoveryHandler.kt: [Universal Wi-Fi P2P discovery handler (Android 10 to 14+)]
 - PrinterListRenderer.kt: [UI generation for the printer list entries]
 - PrintManager.kt: [Logic for socket printing, system dialog, and file decoding]
 - PrinterManager.kt: [Persistent storage and management of printer list]

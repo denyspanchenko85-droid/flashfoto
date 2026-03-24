@@ -1,3 +1,4 @@
+// Responsibility: Managed Wi-Fi Direct operations with peer requesting
 package com.shadow.flashfoto
 
 import android.annotation.SuppressLint
@@ -15,7 +16,8 @@ class WifiDirectManager(private val context: Context) {
     fun discoverPeers(listener: WifiP2pManager.PeerListListener) {
         manager?.discoverPeers(channel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                Toast.makeText(context, "Пошук запущено...", Toast.LENGTH_SHORT).show()
+                // Після запуску пошуку треба ПРЯМО запитати список пірів
+                manager?.requestPeers(channel, listener)
             }
             override fun onFailure(reason: Int) {
                 Logger.log(context, "Discovery Failed: $reason")

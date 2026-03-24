@@ -11,77 +11,92 @@ import androidx.appcompat.app.AppCompatActivity
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
+    // Менеджери даних та налаштувань
     lateinit var settings: SettingsManager
     lateinit var hEdited: HistoryManager
     lateinit var hRaw: HistoryManager
     lateinit var hTpl: HistoryManager
     
+    // Обробники логіки
     lateinit var camera: CameraHandler
     lateinit var workflow: WorkflowManager
     lateinit var interaction: InteractionManager
     
+    // Wi-Fi Direct компоненти
     private lateinit var wifiLifecycleHelper: WifiDirectLifecycleHelper
     private lateinit var discoveryHandler: WifiDiscoveryHandler
     private lateinit var printerManager: PrinterManager
     
+    // UI елементи
     lateinit var resultImage: ImageView
     lateinit var btnPrint: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 1. Динамічні кольори
+        // Застосування динамічних кольорів Material 3
         com.google.android.material.color.DynamicColors.applyToActivitiesIfAvailable(application)
         
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 2. Ініціалізація менеджерів
+        // 1. Ініціалізація базових сервісів
         settings = SettingsManager(this)
         camera = CameraHandler(this)
         printerManager = PrinterManager(this)
         Bootstrapper.run(this, settings)
         
+        // 2. Ініціалізація Wi-Fi Direct
         wifiLifecycleHelper = WifiDirectLifecycleHelper(this)
         discoveryHandler = WifiDiscoveryHandler(this, printerManager)
 
+        // 3. Ініціалізація менеджерів історії
         hEdited = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Edited"))
         hRaw = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raw"))
         hTpl = HistoryManager(this, File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Templates"))
 
         workflow = WorkflowManager(this, settings)
         
-        // 3. UI Елементи
+        // 4. Прив'язка UI
         resultImage = findViewById(R.id.resultImage)
         btnPrint = findViewById(R.id.btnPrint)
 
-        interaction = InteractionManager(this, workflow, camera)
+        // 5. Налаштування взаємодії (InteractionManager)
+        // Порядок аргументів виправлено згідно з вимогами конструктора
+        interaction = InteractionManager(
+            this, 
+            camera, 
+            hEdited, 
+            hRaw, 
+            hTpl, 
+            settings, 
+            workflow
+        )
         interaction.setup()
 
-        // 4. Логіка кнопки друку (Пошук принтера)
+        // 6. Кнопка пошуку принтера
         btnPrint.setOnClickListener {
-            Toast.makeText(this, "Шукаю пристрої...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Пошук принтерів...", Toast.LENGTH_SHORT).show()
             discoveryHandler.start()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Реєструємо слухача подій Wi-Fi Direct
+        // Реєстрація слухача подій Wi-Fi Direct
         wifiLifecycleHelper.register(
             onPeersAvailable = { devices ->
-                // Коли система знайшла нові пристрої — показуємо діалог вибору
                 if (devices.isNotEmpty()) {
                     discoveryHandler.showPeerDialog(devices) {
-                        Toast.makeText(this, "Принтер готовий до роботи", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Принтер підключено успішно", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
             onConnectionChanged = {
-                // Перевіряємо статус підключення при зміні стану мережі
+                // Логування стану з'єднання при змінах у мережі
                 val wdManager = WifiDirectManager(this)
                 wdManager.requestInfo { info ->
                     if (info.groupFormed) {
-                        val role = if (info.isGroupOwner) "Сервер (Принтер)" else "Клієнт (Камера)"
-                        Logger.log(this, "P2P Connected: $role, IP: ${info.groupOwnerAddress?.hostAddress}")
+                        val status = if (info.isGroupOwner) "Host (Printer)" else "Client (Camera)"
+                        Logger.log(this, "P2P Connection Active: $status")
                     }
                 }
             }
@@ -90,7 +105,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // Обов'язково вимикаємо ресивер, щоб не садити батарею і не плодити помилки
+        // Обов'язкове зняття реєстрації для запобігання витоку пам'яті
         wifiLifecycleHelper.unregister()
     }
 
@@ -106,7 +121,7 @@ class MainActivity : AppCompatActivity() {
                     interaction.refreshPreview()
                 }
             }
-            2 -> { // Вибір власного шаблону
+            2 -> { // Вибір користувацького шаблону
                 if (resultCode == RESULT_OK) {
                     data?.data?.let { uri ->
                         val path = FileUtils.saveCustomTemplate(this, uri)
@@ -121,10 +136,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Відображення файлу в головному ImageView
+     */
     fun display(file: File?) {
         ImageDisplayHelper.show(file, resultImage, btnPrint)
     }
 
+    /**
+     * Запуск інтенту для вибору файлу зображення (шаблону)
+     */
     fun pickTemplateIntent() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -133,12 +154,14 @@ class MainActivity : AppCompatActivity() {
         startActivityForResult(intent, 2)
     }
 
+    /**
+     * Обробка результатів запиту дозволів
+     */
     override fun onRequestPermissionsResult(rc: Int, p: Array<out String>, g: IntArray) {
         super.onRequestPermissionsResult(rc, p, g)
-        // Перевірка дозволів для камери
         if (rc == camera.PERMISSION_CAMERA && g.isNotEmpty() && g[0] == 0) {
             camera.capture()
         }
-        // Дозволи для Wi-Fi Direct (Android 13+) обробляються всередині WifiDiscoveryHandler
+        // Дозволи для Wi-Fi (Android 13+) обробляються всередині discoveryHandler.start()
     }
 }

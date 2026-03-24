@@ -1,4 +1,4 @@
-// Responsibility: Managed Wi-Fi Direct operations with peer requesting
+// Responsibility: Managed Wi-Fi Direct operations with public access for LifecycleHelper
 package com.shadow.flashfoto
 
 import android.annotation.SuppressLint
@@ -9,15 +9,16 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.widget.Toast
 
 class WifiDirectManager(private val context: Context) {
-    private val manager: WifiP2pManager? = context.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
-    private val channel: WifiP2pManager.Channel? = manager?.initialize(context, context.mainLooper, null)
+    // Змінено на публічні val, щоб прибрати помилку в LifecycleHelper
+    val manager: WifiP2pManager? = context.getSystemService(Context.WIFI_P2P_SERVICE) as? WifiP2pManager
+    val channel: WifiP2pManager.Channel? = manager?.initialize(context, context.mainLooper, null)
 
     @SuppressLint("MissingPermission")
-    fun discoverPeers(listener: WifiP2pManager.PeerListListener) {
+    fun discoverPeers(listener: WifiP2pManager.PeerListListener? = null) {
         manager?.discoverPeers(channel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                // Після запуску пошуку треба ПРЯМО запитати список пірів
-                manager?.requestPeers(channel, listener)
+                // Якщо передали лісенер — запитуємо список відразу
+                listener?.let { manager?.requestPeers(channel, it) }
             }
             override fun onFailure(reason: Int) {
                 Logger.log(context, "Discovery Failed: $reason")
@@ -39,7 +40,4 @@ class WifiDirectManager(private val context: Context) {
     fun requestInfo(listener: WifiP2pManager.ConnectionInfoListener) {
         manager?.requestConnectionInfo(channel, listener)
     }
-
-    fun getManager() = manager
-    fun getChannel() = channel
 }

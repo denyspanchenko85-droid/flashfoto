@@ -1,4 +1,4 @@
-// Responsibility: Universal UI handler for device discovery and selection
+// Responsibility: Universal Wi-Fi P2P discovery handler (Fixed start() signature)
 package com.shadow.flashfoto
 
 import android.Manifest
@@ -15,7 +15,8 @@ import android.net.wifi.p2p.WifiP2pDevice
 class WifiDiscoveryHandler(private val context: Context, private val printerManager: PrinterManager) {
     private val wdManager = WifiDirectManager(context)
 
-    fun start() {
+    // Додано параметр за замовчуванням, щоб виправити помилку в PrinterDialogHandler
+    fun start(onSuccess: (() -> Unit)? = null) {
         val activity = context as? Activity ?: return
         val permissions = mutableListOf<String>()
         
@@ -35,12 +36,12 @@ class WifiDiscoveryHandler(private val context: Context, private val printerMana
             return
         }
 
-        wdManager.discoverPeers()
+        // Викликаємо без лісенера, бо список прийде в Receiver
+        wdManager.discoverPeers(null)
     }
 
     fun showPeerDialog(devices: List<WifiP2pDevice>, onSuccess: () -> Unit) {
         if (devices.isEmpty()) return
-
         val deviceNames = devices.map { "${it.deviceName}\n${it.deviceAddress}" }.toTypedArray()
 
         AlertDialog.Builder(context)
@@ -50,7 +51,7 @@ class WifiDiscoveryHandler(private val context: Context, private val printerMana
                 wdManager.connect(selected) {
                     wdManager.requestInfo { info ->
                         if (info.groupFormed) {
-                            val ip = info.groupOwnerAddress.hostAddress
+                            val ip = info.groupOwnerAddress?.hostAddress ?: ""
                             printerManager.addPrinter(selected.deviceName, ip, ConnectionType.WIFI_DIRECT)
                             printerManager.setActive(ip)
                             onSuccess()
